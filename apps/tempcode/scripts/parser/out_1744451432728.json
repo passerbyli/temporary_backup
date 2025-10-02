@@ -1,0 +1,50 @@
+{
+  "nodes": [
+    {
+      "id": "tmp_raw_orders",
+      "type": "temp_table"
+    },
+    {
+      "id": "ct_cms.user_orders_wide",
+      "type": "table"
+    },
+    {
+      "id": "ct_cms.orders",
+      "type": "table"
+    },
+    {
+      "id": "tmp_raw_orders",
+      "type": "table"
+    },
+    {
+      "id": "tmp_raw_orders",
+      "type": "table"
+    },
+    {
+      "id": "ct_cms.users",
+      "type": "table"
+    }
+  ],
+  "edges": [
+    {
+      "source": "ct_cms.orders",
+      "target": "ct_cms.user_orders_wide",
+      "label": "example_proc"
+    },
+    {
+      "source": "tmp_raw_orders",
+      "target": "ct_cms.user_orders_wide",
+      "label": "example_proc"
+    },
+    {
+      "source": "tmp_raw_orders",
+      "target": "ct_cms.user_orders_wide",
+      "label": "example_proc"
+    },
+    {
+      "source": "ct_cms.users",
+      "target": "ct_cms.user_orders_wide",
+      "label": "example_proc"
+    }
+  ]
+}

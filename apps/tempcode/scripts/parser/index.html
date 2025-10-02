@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SQL 血缘图</title>
+    <script src="https://gw.alipayobjects.com/os/lib/antv/g6/4.7.7/dist/g6.min.js"></script>
+    <style>
+      html,
+      body,
+      #container {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="container"></div>
+
+    <script>
+      let data = {
+        nodes: [
+          { id: 'scott.emp', label: 'scott.emp', type: 'table', isSourceInput: true },
+          { id: 'orders_a', label: 'orders_', type: 'table', isFinalOutput: false },
+          { id: 'orders', label: 'orders', type: 'table', isFinalOutput: true },
+        ],
+        edges: {
+          source: 'ct_cms.orders',
+          target: 'ct_cms.user_orders_wide',
+          label: 'example_proc',
+        },
+        isSwitchTable: true,
+      }
+
+      data = {
+        nodes: [
+          {
+            id: 'ct_cms.etl_user_orders',
+            label: 'ct_cms.etl_user_orders',
+            type: 'procedure',
+          },
+          {
+            id: 'ct_cms.orders',
+            label: 'ct_cms.orders',
+            type: 'table',
+            isTemporary: false,
+            isSourceInput: false,
+            isFinalOutput: false,
+          },
+          {
+            id: 'public.tmp_raw_orders',
+            label: 'public.tmp_raw_orders',
+            type: 'table',
+            isTemporary: true,
+            isSourceInput: false,
+            isFinalOutput: false,
+          },
+          {
+            id: 'ct_cms.users',
+            label: 'ct_cms.users',
+            type: 'table',
+            isTemporary: false,
+            isSourceInput: false,
+            isFinalOutput: false,
+          },
+          {
+            id: 'public.user_stats',
+            label: 'public.user_stats',
+            type: 'table',
+            isTemporary: true,
+            isSourceInput: false,
+            isFinalOutput: false,
+          },
+          {
+            id: 'public.latest_orders',
+            label: 'public.latest_orders',
+            type: 'table',
+            isTemporary: true,
+            isSourceInput: false,
+            isFinalOutput: false,
+          },
+          {
+            id: 'ct_cms.user_orders_wide_a',
+            label: 'ct_cms.user_orders_wide_a',
+            type: 'table',
+            isTemporary: false,
+            isSourceInput: false,
+            isFinalOutput: false,
+          },
+        ],
+        edges: [
+          {
+            source: 'ct_cms.orders',
+            target: 'ct_cms.user_orders_wide_a',
+            label: 'dataflow',
+          },
+          {
+            source: 'public.tmp_raw_orders',
+            target: 'ct_cms.user_orders_wide_a',
+            label: 'dataflow',
+          },
+          {
+            source: 'public.tmp_raw_orders',
+            target: 'ct_cms.user_orders_wide_a',
+            label: 'dataflow',
+          },
+          {
+            source: 'ct_cms.users',
+            target: 'ct_cms.user_orders_wide_a',
+            label: 'dataflow',
+          },
+          {
+            source: 'ct_cms.users',
+            target: 'ct_cms.user_orders_wide_a',
+            label: 'dataflow',
+          },
+          {
+            source: 'public.user_stats',
+            target: 'ct_cms.user_orders_wide_a',
+            label: 'dataflow',
+          },
+          {
+            source: 'public.latest_orders',
+            target: 'ct_cms.user_orders_wide_a',
+            label: 'dataflow',
+          },
+          {
+            source: 'ct_cms.user_orders_wide_a',
+            target: 'ct_cms.user_orders_wide_a',
+            label: 'dataflow',
+          },
+          {
+            source: 'ct_cms.orders',
+            target: 'ct_cms.user_orders_wide',
+            label: 'dataflow',
+          },
+          {
+            source: 'public.tmp_raw_orders',
+            target: 'ct_cms.user_orders_wide',
+            label: 'dataflow',
+          },
+          {
+            source: 'public.tmp_raw_orders',
+            target: 'ct_cms.user_orders_wide',
+            label: 'dataflow',
+          },
+          {
+            source: 'ct_cms.users',
+            target: 'ct_cms.user_orders_wide',
+            label: 'dataflow',
+          },
+          {
+            source: 'ct_cms.users',
+            target: 'ct_cms.user_orders_wide',
+            label: 'dataflow',
+          },
+          {
+            source: 'public.user_stats',
+            target: 'ct_cms.user_orders_wide',
+            label: 'dataflow',
+          },
+          {
+            source: 'public.latest_orders',
+            target: 'ct_cms.user_orders_wide',
+            label: 'dataflow',
+          },
+          {
+            source: 'ct_cms.user_orders_wide_a',
+            target: 'ct_cms.user_orders_wide',
+            label: 'dataflow',
+          },
+          {
+            source: 'ct_cms.etl_user_orders',
+            target: 'ct_cms.user_orders_wide_a',
+            label: 'procedure',
+          },
+          {
+            source: 'ct_cms.etl_user_orders',
+            target: 'ct_cms.user_orders_wide',
+            label: 'procedure',
+          },
+        ],
+      }
+
+      const colorMap = {
+        table: '#5B8FF9',
+        temp_table: '#F6BD16',
+        view: '#5AD8A6',
+        procedure: '#E8684A',
+      }
+
+      const graph = new G6.Graph({
+        container: 'container',
+        width: window.innerWidth,
+        height: window.innerHeight,
+        layout: { type: 'dagre', rankdir: 'LR', nodesep: 50, ranksep: 100 },
+        defaultNode: {
+          size: [120, 40],
+          style: { radius: 8 },
+          labelCfg: { style: { fill: '#fff', fontSize: 12 } },
+        },
+        defaultEdge: {
+          style: { stroke: '#ccc', endArrow: true },
+          labelCfg: { autoRotate: true, style: { fontSize: 10, fill: '#000' } },
+        },
+      })
+
+      data.nodes.forEach((node) => {
+        node.style = { fill: colorMap[node.type] || '#ccc' }
+      })
+
+      graph.data(data)
+      graph.render()
+
+      window.addEventListener('resize', () => {
+        if (!graph || graph.get('destroyed')) return
+        graph.changeSize(window.innerWidth, window.innerHeight)
+      })
+    </script>
+  </body>
+</html>

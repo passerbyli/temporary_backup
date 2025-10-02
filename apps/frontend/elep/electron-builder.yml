@@ -1,0 +1,64 @@
+appId: com.example.eleplus
+productName: elep
+copyright: Copyright © 2025 YourName
+npmRebuild: false
+files:
+  - dist/**/*
+  - electron/**/*
+  - pages/**/*
+  - plugins/**/*
+  - public
+  - preload.js
+  - main.js
+  - package.json
+  - '!**/node_modules/.bin'
+  - '!**/node_modules/*/test'
+  - '!**/node_modules/*/docs'
+
+extraResources:
+  - from: public
+    to: public
+    filter:
+      - '**/*'
+
+directories:
+  output: dist
+
+asar: true
+
+mac:
+  target:
+    - dmg
+    - zip
+  icon: public/icons/icon.icns
+  artifactName: '${productName}-${version}-mac-${arch}.${ext}'
+  hardenedRuntime: false
+  gatekeeperAssess: false
+  sign: false
+dmg:
+  sign: false
+  background: public/icons/1024x1024.png
+  iconSize: 100
+  contents:
+    - x: 130
+      y: 220
+      type: file
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+
+win:
+  target:
+    - nsis
+  icon: public/icons/icon.ico
+  artifactName: '${productName}-${version}-win.${ext}'
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+
+publish: null
+generateUpdatesFilesForAllChannels: false

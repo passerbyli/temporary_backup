@@ -1,0 +1,12 @@
+{
+    "name": "cxf-api-exporter",
+    "version": "1.0.0",
+    "type": "module",
+    "private": true,
+    "bin": {
+        "cxf-api-export": "export-apis.js"
+    },
+    "dependencies": {
+        "xlsx": "^0.18.5"
+    }
+}

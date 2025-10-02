@@ -1,0 +1,133 @@
+{
+    "cells": [
+        {
+            "xAxis": {
+                "label": "笔记本电脑",
+                "type": "category",
+                "data": [
+                    "Mon",
+                    "Tue",
+                    "Wed",
+                    "Thu",
+                    "Fri",
+                    "Sat",
+                    "Sun"
+                ]
+            },
+            "yAxis": {
+                "type": "value"
+            },
+            "series": [
+                {
+                    "data": [
+                        150,
+                        230,
+                        224,
+                        218,
+                        135,
+                        147,
+                        260
+                    ],
+                    "type": "line"
+                }
+            ]
+        },
+        {
+            "id": "213",
+            "name": "jdiaso",
+            "type": "table",
+            "setting": {
+                "linkageType": 1,
+                "field": {
+                    "table.field1_cn": {
+                        "type": "drill",
+                        "target": "xx-xx-xx",
+                        "drillType": "page",
+                        "extra": [
+                            {
+                                "type": "field",
+                                "fieldValue": "",
+                                "field": "table.field1_cn_type",
+                                "values": [],
+                                "multiple": true,
+                                "SelectedValues": [],
+                                "typeValue": 1
+                            },
+                            {
+                                "type": "field",
+                                "fieldValue": "",
+                                "field": "table.国家_中文_类型",
+                                "values": [],
+                                "multiple": true,
+                                "SelectedValues": [
+                                    "法国"
+                                ],
+                                "typeValue": 1
+                            }
+                        ],
+                        "nodeId": "",
+                        "fieldCfg": {
+                            "list": [
+                                "table.字段_中文",
+                                "table.field1_name_cn",
+                                "table.field999_name_cn",
+                                "table.field1_name"
+                            ],
+                            "isSelectAll": true
+                        }
+                    }
+                }
+            },
+            "config": {
+                "rowList": [
+                    {
+                        "id": 1,
+                        "label": "field1Name_cn",
+                        "name": "field1_cn",
+                        "treeId": "table.field1_cn",
+                        "treeName": "field1Name_cn"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "213",
+            "name": "jdiaso",
+            "type": "table",
+            "config": {
+                "yAxis": [
+                    {
+                        "conifg": {
+                            "fieldConf": {
+                                "id": 6,
+                                "name": "国家_中文_类型",
+                                "expression": "qqqqq",
+                                "tableName": "table",
+                                "type": "number",
+                                "treeId": "table.国家_中文_类型"
+                            }
+                        }
+                    }
+                ]
+            },
+            "sortField": {
+                "id": 6,
+                "iconType": "measure",
+                "label": "国家_中文_类型",
+                "expression": "xxxxxxx",
+                "name": "国家_中文_类型",
+                "treeId": "table.国家_中文_类型",
+                "treeName": "国家_中文_类型",
+                "displayName": "国家_中文_类型"
+            },
+            "defaultFiled": {
+                "id": 1,
+                "label": "field1Name_cn",
+                "name": "field1_cn",
+                "treeId": "table.field1_cn",
+                "treeName": "field1Name_cn"
+            }
+        }
+    ],
+    "filters": []
+}

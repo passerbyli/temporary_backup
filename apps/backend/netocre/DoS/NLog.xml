@@ -1,0 +1,16 @@
+<targets>
+  <!-- 统一的异步包装器参数 -->
+  <target name="file-async" xsi:type="AsyncWrapper"
+          queueLimit="5000"                <!-- 队列上限 -->
+          overflowAction="Discard"         <!-- 队列满时丢弃 -->
+          timeToSleepBetweenBatches="50"   <!-- 批次休眠 -->
+          batchSize="200">                 <!-- 每批写多少条 -->
+    <target xsi:type="File"
+            fileName="${basedir}/logs/app.log"
+            layout="${longdate}|${uppercase:${level}}|${logger}|${message}${onexception:inner=${newline}${substring:inner=${exception:format=ToString,maxInnerExceptionLevel=5}:length=4000}}"
+            keepFileOpen="false" concurrentWrites="true"
+            archiveEvery="Day" archiveNumbering="Rolling"
+            archiveAboveSize="10485760"    <!-- 10MB 切卷 -->
+            maxArchiveFiles="20" />        <!-- 保留 20 个归档 -->
+  </target>
+</targets>

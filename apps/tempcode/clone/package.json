@@ -1,0 +1,28 @@
+{
+  "name": "clone",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "scan": "node scan-component-deps.js",
+    "scan:vue": "TARGET=vue node scan-component-deps.js",
+    "scan:ep": "TARGET=element-plus node scan-component-deps.js",
+    "scanW:ep": "cross-env TARGET=element-plus node scan-component-deps.js",
+    "scan2:vue": "TARGET=vue node scan-component-deps_v1.js",
+    "scan2:ep": "TARGET=element-plus INSTALLER=pnpm node scan-component-deps_v1.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.8.0",
+  "dependencies": {
+    "fs-extra": "^11.3.0",
+    "p-limit": "^6.2.0",
+    "simple-git": "^3.28.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3"
+  }
+}

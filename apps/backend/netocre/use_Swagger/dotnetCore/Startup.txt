@@ -1,0 +1,83 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.OpenApi.Models;
+using System;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
+using System.Text.Encodings.Web;
+using System.Text.RegularExpressions;
+using dotnetCore.Manager;
+using dotnetCore.Middleware;
+using dotnetCore.Model;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.Extensions.Options;
+
+namespace dotnetCore
+{
+    public class Startup
+    {
+        public Startup(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
+        public IConfiguration Configuration { get; }
+
+
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.Configure<SecurityOptions>(Configuration.GetSection("Security"));
+            services.Configure<AppConfig>(Configuration.GetSection("AppConfig"));
+
+            // 读取配置appsettings.json里的配置1信息是否加载
+            services.AddControllersWithViews(options =>
+            {
+                // 禁用隐式必填属性。目的是为了让 Swagger 能够正确识别可选参数
+                options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
+            });
+
+            // 读取配置appsettings.json里的配置2信息是否加载
+            // 禁用自动模型验证。目的是为了让自定义的 ValidateOptions 过滤器生效
+            services.Configure<ApiBehaviorOptions>(options =>
+            {
+                options.InvalidModelStateResponseFactory = context =>
+                {
+                    var error = context.ModelState.Values.SelectMany(e => e.Errors).Select(e => e.ErrorMessage)
+                        .FirstOrDefault();
+                    var result = new
+                    {
+                        status = 500
+                    };
+                    return new BadRequestObjectResult(result)
+                    {
+                        ContentTypes = { "" }
+                    };
+                };
+            });
+
+            var ignoreSsl = Configuration.GetValue<bool>("Security:IgnoreSsl");
+            // 读取配置appsettings.json里的配置3信息是否加载
+            services.AddHttpClient("").ConfigureHttpMessageHandlerBuilder(builder =>
+            {
+                /// 禁用 SSL 验证。目的是为了在开发环境中使用自签名证书
+                builder.PrimaryHandler = new HttpClientHandler
+                {
+                    ServerCertificateCustomValidationCallback =ignoreSsl? (m, c, ch, e) => true:HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+                };
+            });
+            
+            services.AddMvc(options =>
+            {
+                options.Filters.Add(typeof(ValidateOptions<>));
+
+            });
+            
+        }
+    }
+}

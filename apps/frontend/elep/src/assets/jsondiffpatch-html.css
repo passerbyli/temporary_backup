@@ -1,0 +1,30 @@
+.jsondiffpatch-delta {
+  font-family: Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.jsondiffpatch-delta pre {
+  margin: 0;
+  display: inline;
+}
+.jsondiffpatch-added {
+  background: #e6ffed;
+  color: #22863a;
+}
+.jsondiffpatch-deleted {
+  background: #ffeef0;
+  color: #b31d28;
+  text-decoration: line-through;
+}
+.jsondiffpatch-unchanged {
+  color: #999;
+}
+.jsondiffpatch-movedestination {
+  background: #fff5b1;
+}
+.jsondiffpatch-textdiff-added {
+  background: #acf2bd;
+}
+.jsondiffpatch-textdiff-deleted {
+  background: #fdb8c0;
+}

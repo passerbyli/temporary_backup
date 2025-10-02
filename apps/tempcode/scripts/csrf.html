@@ -1,0 +1,26 @@
+<form id="myForm" action="/api/form/submit" method="POST">
+  <input name="foo" value="bar">
+</form>
+<button id="btn">提交</button>
+
+<script>
+  // 假设你把 csrfToken 放在 <meta> 或 window 变量或 cookie 里
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || window.CSRF_TOKEN
+
+  document.getElementById('btn').addEventListener('click', async (e) => {
+    e.preventDefault()
+    const form = document.getElementById('myForm')
+    const formData = new FormData(form)
+
+    const resp = await fetch(form.action, {
+      method: form.method,
+      body: formData,                 // 保持和原生表单一样: x-www-form-urlencoded/multipart 都 OK
+      credentials: 'include',         // 带上 cookie
+      headers: { 'x-csrf-token': csrfToken }
+    })
+
+    // 如果接口会返回页面（HTML）用于跳转：
+    // const html = await resp.text()
+    // document.open(); document.write(html); document.close();
+  })
+</script>

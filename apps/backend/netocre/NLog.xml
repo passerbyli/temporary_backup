@@ -1,0 +1,55 @@
+<nlog>
+  <targets>
+    <target name="logfile" xsi:type="File" fileName="log.txt">
+      <layout>
+        ${replace:searchFor=", PublicKeyToken=[0-9a-fA-F]+"
+                  replaceWith=""
+                  inner=${message}}
+      </layout>
+    </target>
+  </targets>
+
+  <rules>
+    <logger name="*" minlevel="Info" writeTo="logfile" />
+  </rules>
+</nlog>
+
+
+<!-- xx. ------->
+
+
+<nlog xmlns="http://www.nlog-project.org/schemas/NLog.xsd"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <!-- 变量：只在命中关键字时才做替换 -->
+  <variable name="cleanMessage"
+            value="${when:when='${message:whenContains=PublicKeyToken=}'
+                         :inner=${replace:regex=true
+                                        :searchFor=',\s*PublicKeyToken=[0-9a-fA-F]+'
+                                        :replaceWith=''
+                                        :inner=${message}}
+                         :else=${message}}"/>
+
+  <variable name="cleanException"
+            value="${when:when='${exception:format=ToString:whenContains=PublicKeyToken=}'
+                         :inner=${replace:regex=true
+                                        :searchFor=',\s*PublicKeyToken=[0-9a-fA-F]+'
+                                        :replaceWith=''
+                                        :inner=${exception:format=ToString}}
+                         :else=${exception:format=Message,Type}}"/>
+
+  <targets>
+    <target name="consoleRaw" xsi:type="Console"
+            layout="${longdate} ${uppercase:${level}} ${logger} | ${var:cleanMessage} ${onexception:${var:cleanException}}" />
+    <target name="console" xsi:type="AsyncWrapper" wrappedTarget="consoleRaw" />
+
+    <target name="fileRaw" xsi:type="File" fileName="log.txt"
+            layout="${longdate} ${uppercase:${level}} ${logger} | ${var:cleanMessage} ${onexception:${var:cleanException}}" />
+    <target name="file" xsi:type="AsyncWrapper" wrappedTarget="fileRaw"
+            queueLimit="20000" batchSize="100" overflowAction="Block" />
+  </targets>
+
+  <rules>
+    <logger name="*" minlevel="Info" writeTo="console,file" />
+  </rules>
+</nlog>

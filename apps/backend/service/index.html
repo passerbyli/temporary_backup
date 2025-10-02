@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>正则表达式校验页面 · Simple Regex Tester</title>
+  <style>
+    :root{
+      --bg:#0f172a; --panel:#0b1023; --muted:#94a3b8; --text:#e2e8f0; --accent:#60a5fa; --ok:#22c55e; --warn:#f59e0b; --err:#ef4444;
+      --border:#1e293b; --chip:#111827; --hl:#fde68a; --code:#0b1220; --card:#0f1a33;
+    }
+    html,body{height:100%;}
+    body{margin:0;background:linear-gradient(180deg,#0b1023, #0a0f20 60%, #0b1220); color:var(--text);font:14px/1.6 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji"}
+    .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
+    h1{font-size:22px;margin:0 0 8px;letter-spacing:.2px}
+    .sub{color:var(--muted);margin-bottom:18px}
+    .grid{display:grid;gap:12px;grid-template-columns:1fr;}
+    @media(min-width:980px){.grid{grid-template-columns:1.2fr .8fr}}
+    .card{background:linear-gradient(180deg,#0e1530,#0b1226);border:1px solid var(--border);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.35);}
+    .card-hd{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border)}
+    .card-bd{padding:14px}
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    label{color:var(--muted)}
+    input[type=text],textarea{width:100%;padding:10px 12px;background:#0a0f1e;color:var(--text);border:1px solid var(--border);border-radius:10px;outline:none}
+    input[type=text]:focus,textarea:focus{border-color:#334155;box-shadow:0 0 0 2px rgba(100,116,139,.25)}
+    textarea{min-height:200px;resize:vertical}
+    .btn{cursor:pointer;border:1px solid var(--border);background:linear-gradient(180deg,#0e172e,#0a1226);color:var(--text);padding:9px 14px;border-radius:10px}
+    .btn:hover{border-color:#334155}
+    .btn-ghost{background:#0a0f1e}
+    .btn-ok{border-color:#14532d;background:linear-gradient(180deg,#0a1f16,#0e2b1c)}
+    .btn-warn{border-color:#7c2d12;background:linear-gradient(180deg,#25150a,#2c180a)}
+    .btn-acc{border-color:#1e3a8a;background:linear-gradient(180deg,#0b1634,#0e1a3f)}
+    .chip{display:inline-flex;gap:6px;align-items:center;padding:4px 8px;border-radius:999px;background:#0c1326;border:1px solid var(--border);color:var(--muted);font-size:12px}
+    .muted{color:var(--muted)}
+    .status{display:flex;gap:10px;flex-wrap:wrap}
+    .mono{font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+    .pre{background:var(--code);border:1px solid var(--border);padding:10px;border-radius:10px;overflow:auto}
+    .hl{background:var(--hl);color:#111827;border-radius:4px;padding:0 2px}
+    .preview{white-space:pre-wrap;word-break:break-word}
+    .kbd{font:12px ui-monospace,monospace;background:#0b1020;border:1px solid var(--border);padding:1px 6px;border-radius:6px;color:var(--muted)}
+    .cols{display:grid;gap:10px;grid-template-columns:1fr}
+    @media(min-width:720px){.cols{grid-template-columns:1fr 1fr}}
+    .flags{display:flex;flex-wrap:wrap;gap:8px}
+    .flag input{display:none}
+    .flag label{user-select:none;cursor:pointer}
+    .flag .chip{border-color:#1f2937}
+    .flag input:checked + label .chip{border-color:#1e3a8a;color:#c7d2fe;background:#0b1534}
+    .list{display:grid;gap:6px}
+    .match{padding:8px;border:1px dashed #334155;border-radius:10px}
+    .help small{color:var(--muted)}
+    .presets{gap:8px;display:flex;flex-wrap:wrap}
+    .presets button{font-size:12px}
+    .footer{opacity:.7;margin-top:12px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>🧪 正则表达式校验 · Simple Regex Tester</h1>
+    <div class="sub">输入 <span class="mono">pattern</span> 与 <span class="mono">flags</span>，在右侧查看匹配结果与高亮。支持本地保存、预设示例与替换测试。</div>
+
+    <div class="grid">
+      <!-- 左：输入区 -->
+      <section class="card">
+        <div class="card-hd">
+          <strong>输入</strong>
+          <span class="chip">快捷键：<span class="kbd">Cmd/Ctrl</span> + <span class="kbd">Enter</span> 运行</span>
+        </div>
+        <div class="card-bd">
+          <div class="row">
+            <div style="flex:1 1 auto">
+              <label>正则 Pattern</label>
+              <input id="pattern" type="text" placeholder="例如：^\n?\s*hello" />
+            </div>
+            <div style="flex:0 0 auto;min-width:220px">
+              <label>Flags</label>
+              <div class="flags" id="flagsBox"></div>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:8px">
+            <div style="flex:1 1 auto">
+              <label>测试文本</label>
+              <textarea id="text" placeholder="将待匹配内容粘贴到这里……"></textarea>
+            </div>
+          </div>
+
+          <details style="margin-top:6px">
+            <summary class="muted">展开替换测试（可选）</summary>
+            <div class="cols" style="margin-top:8px">
+              <div>
+                <label>替换模板（支持 $&, $1..$9 等）</label>
+                <input id="replaceTpl" type="text" placeholder="例如：<$&> 或 [$1]"/>
+              </div>
+              <div>
+                <label>替换结果（只读）</label>
+                <textarea id="replaceOut" readonly></textarea>
+              </div>
+            </div>
+          </details>
+
+          <div class="row" style="margin-top:12px">
+            <button id="run" class="btn btn-acc">运行匹配</button>
+            <button id="clear" class="btn btn-ghost">清空</button>
+            <button id="save" class="btn">保存到本地</button>
+            <button id="load" class="btn">读取上次</button>
+            <div class="presets" style="margin-left:auto">
+              <button class="btn btn-ghost" data-preset="email">邮箱</button>
+              <button class="btn btn-ghost" data-preset="url">URL</button>
+              <button class="btn btn-ghost" data-preset="phone">手机号</button>
+              <button class="btn btn-ghost" data-preset="ipv4">IPv4</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 右：结果区 -->
+      <section class="card">
+        <div class="card-hd">
+          <strong>结果</strong>
+          <div class="status" id="status"></div>
+        </div>
+        <div class="card-bd">
+          <div id="error" style="display:none;color:var(--err);margin-bottom:8px"></div>
+
+          <div class="help" style="margin-bottom:8px">
+            <small>Flag 说明：<span class="mono">g</span> 全局，<span class="mono">i</span> 忽略大小写，<span class="mono">m</span> 多行起止，<span class="mono">s</span> 点号匹配换行，<span class="mono">u</span> Unicode，<span class="mono">y</span> 粘滞匹配。</small>
+          </div>
+
+          <div class="pre preview" id="preview">（高亮预览区域）</div>
+
+          <h3 style="margin:12px 0 6px;font-size:14px;color:var(--muted)">匹配列表</h3>
+          <div class="list" id="list"></div>
+        </div>
+      </section>
+    </div>
+
+    <section class="card" style="margin-top:12px">
+      <div class="card-hd"><strong>快速教程</strong></div>
+      <div class="card-bd">
+        <ol style="margin:0;padding-left:18px">
+          <li>在左侧输入 <span class="mono">pattern</span> 与勾选 <span class="mono">flags</span>，粘贴测试文本。</li>
+          <li>点击「运行匹配」或用 <span class="kbd">Cmd/Ctrl + Enter</span>。错误会显示在顶部红字。</li>
+          <li>下方列表会显示每个匹配的 <span class="mono">index</span>、<span class="mono">match</span> 与捕获组。</li>
+          <li>展开「替换测试」可验证 <span class="mono">String.prototype.replace</span> 的替换结果。</li>
+        </ol>
+        <div class="footer">Made with ♥. 本页面纯前端实现，可离线保存为 <span class="mono">.html</span> 直接使用。</div>
+      </div>
+    </section>
+  </div>
+
+<script>
+(function(){
+  const patternEl = document.getElementById('pattern');
+  const textEl = document.getElementById('text');
+  const flagsBox = document.getElementById('flagsBox');
+  const runBtn = document.getElementById('run');
+  const clearBtn = document.getElementById('clear');
+  const saveBtn = document.getElementById('save');
+  const loadBtn = document.getElementById('load');
+  const statusEl = document.getElementById('status');
+  const previewEl = document.getElementById('preview');
+  const listEl = document.getElementById('list');
+  const errEl = document.getElementById('error');
+  const replaceTplEl = document.getElementById('replaceTpl');
+  const replaceOutEl = document.getElementById('replaceOut');
+
+  const FLAG_ITEMS = [
+    {k:'g', t:'全局 (g)'},
+    {k:'i', t:'忽略大小写 (i)'} ,
+    {k:'m', t:'多行 (m)'},
+    {k:'s', t:'单行/点任意 (s)'},
+    {k:'u', t:'Unicode (u)'},
+    {k:'y', t:'粘滞 (y)'}
+  ];
+
+  // 渲染 flags 复选
+  FLAG_ITEMS.forEach(({k,t})=>{
+    const id = 'flag_'+k
+    const box = document.createElement('div');
+    box.className = 'flag';
+    box.innerHTML = `<input id="${id}" type="checkbox" value="${k}"><label for="${id}"><span class="chip">${k.toUpperCase()}</span></label>`
+    flagsBox.appendChild(box)
+  })
+
+  function getFlags(){
+    return FLAG_ITEMS.map(({k})=>document.getElementById('flag_'+k).checked? k : '').join('');
+  }
+  function setFlags(flags){
+    FLAG_ITEMS.forEach(({k})=>{
+      document.getElementById('flag_'+k).checked = flags.includes(k)
+    })
+  }
+
+  function highlight(text, matches){
+    if(!matches.length) return escapeHtml(text);
+    const ranges = matches.map(m=>({start:m.index, end:m.index + m[0].length}))
+    // 合并重叠区间
+    ranges.sort((a,b)=>a.start-b.start)
+    const merged=[]; let cur=null
+    for(const r of ranges){
+      if(!cur || r.start>cur.end){ cur = {...r}; merged.push(cur) }
+      else { cur.end = Math.max(cur.end, r.end) }
+    }
+    let out=''; let p=0
+    for(const r of merged){
+      out += escapeHtml(text.slice(p, r.start))
+      out += '<span class="hl">' + escapeHtml(text.slice(r.start, r.end)) + '</span>'
+      p = r.end
+    }
+    out += escapeHtml(text.slice(p))
+    return out
+  }
+
+  function escapeHtml(str){
+    return str.replace(/[&<>\"']/g, s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s]))
+  }
+
+  function run(){
+    const pattern = patternEl.value
+    const flags = getFlags()
+    const txt = textEl.value
+    listEl.innerHTML = ''
+    errEl.style.display = 'none'
+    errEl.textContent = ''
+    replaceOutEl.value = ''
+
+    if(!pattern){
+      statusEl.innerHTML = `<span class="chip">未输入 Pattern</span>`
+      previewEl.innerHTML = escapeHtml(txt||'')
+      return
+    }
+
+    let re
+    try{ re = new RegExp(pattern, flags) }
+    catch(e){
+      errEl.style.display = 'block'
+      errEl.textContent = '正则语法错误：' + e.message
+      statusEl.innerHTML = `<span class="chip">编译失败</span>`
+      previewEl.innerHTML = escapeHtml(txt)
+      return
+    }
+
+    const matches = []
+    if(flags.includes('g')){
+      let m
+      while((m = re.exec(txt))){
+        matches.push(m)
+        if(m.index === re.lastIndex) re.lastIndex++ // 防止零宽死循环
+      }
+    }else{
+      const m = re.exec(txt)
+      if(m) matches.push(m)
+    }
+
+    statusEl.innerHTML = `
+      <span class="chip">匹配数：<b class="mono">${matches.length}</b></span>
+      <span class="chip">Flags：<span class="mono">/${flags||'(none)'}</span></span>
+    `
+
+    // 预览高亮
+    previewEl.innerHTML = highlight(txt, matches)
+
+    // 列表
+    if(!matches.length){
+      listEl.innerHTML = '<div class="muted">无匹配</div>'
+    }else{
+      const frag = document.createDocumentFragment()
+      matches.forEach((m, i)=>{
+        const div = document.createElement('div')
+        div.className = 'match'
+        const groups = Array.from(m).map((g,gi)=>`$${gi}: <code class="mono">${escapeHtml(String(g))}</code>`).join('  ')
+        div.innerHTML = `#${i+1} @index <b class="mono">${m.index}</b> · length <b class="mono">${m[0].length}</b><br/>${groups}`
+        frag.appendChild(div)
+      })
+      listEl.appendChild(frag)
+    }
+
+    // 替换测试
+    if(replaceTplEl.value){
+      try{ replaceOutEl.value = textEl.value.replace(re, replaceTplEl.value) }
+      catch(e){ replaceOutEl.value = '替换错误：' + e.message }
+    }
+  }
+
+  // 事件
+  runBtn.addEventListener('click', run)
+  ;['keyup','change'].forEach(evt=>{
+    patternEl.addEventListener(evt, debounce(run, 300))
+    textEl.addEventListener(evt, debounce(run, 300))
+    replaceTplEl.addEventListener(evt, debounce(run, 300))
+    flagsBox.addEventListener(evt, debounce(run, 0))
+  })
+  document.addEventListener('keydown', (e)=>{
+    if((e.ctrlKey||e.metaKey) && e.key==='Enter'){ run() }
+  })
+
+  clearBtn.addEventListener('click', ()=>{
+    patternEl.value=''; textEl.value=''; replaceTplEl.value=''; replaceOutEl.value='';
+    setFlags(''); run();
+  })
+
+  // 本地存取
+  const KEY = 'regex-tester-v1'
+  saveBtn.addEventListener('click', ()=>{
+    const data = { pattern: patternEl.value, flags: getFlags(), text: textEl.value, repl: replaceTplEl.value }
+    localStorage.setItem(KEY, JSON.stringify(data))
+    toast('已保存到本地')
+  })
+  loadBtn.addEventListener('click', ()=>{
+    const raw = localStorage.getItem(KEY)
+    if(!raw) return toast('暂无可读取的数据')
+    try{
+      const {pattern, flags, text, repl} = JSON.parse(raw)
+      patternEl.value = pattern||''
+      setFlags(flags||'')
+      textEl.value = text||''
+      replaceTplEl.value = repl||''
+      run()
+      toast('已读取上次内容')
+    }catch{ toast('读取失败') }
+  })
+
+  // 预设
+  document.querySelectorAll('[data-preset]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const p = btn.getAttribute('data-preset')
+      const pres = {
+        email: { pat: '^[\\w.-]+@[\\w.-]+\\.[A-Za-z]{2,}$', flags:'i', txt:'hello@example.com\nfoo@bar-baz.cn\nnot-an-email@\n' },
+        url:   { pat: '^(https?:\\/\\/)?([\\w.-]+)\\.([A-Za-z]{2,})(:[0-9]+)?(\\/\\S*)?$', flags:'i', txt:'https://example.com\nhttp://foo.bar:8080/home?q=1\njust-text' },
+        phone: { pat: '^(?:\\+?86)?1[3-9]\\d{9}$', flags:'', txt:'13800138000\n+8613500000000\n123456' },
+        ipv4:  { pat: '^((25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\.){3}(25[0-5]|2[0-4]\\d|[01]?\\d\\d?)$', flags:'', txt:'192.168.0.1\n256.0.0.1' }
+      }
+      const d = pres[p]
+      patternEl.value = d.pat
+      setFlags(d.flags)
+      textEl.value = d.txt
+      replaceTplEl.value = ''
+      run()
+    })
+  })
+
+  function debounce(fn, wait){
+    let t; return function(){ clearTimeout(t); t = setTimeout(()=>fn.apply(this, arguments), wait) }
+  }
+  function toast(msg){
+    const el = document.createElement('div');
+    el.textContent = msg
+    el.style.cssText = 'position:fixed;left:50%;top:18px;transform:translateX(-50%);background:#0c1326;border:1px solid #334155;padding:8px 12px;border-radius:10px;color:#cbd5e1;z-index:9999;box-shadow:0 6px 18px rgba(0,0,0,.35)';
+    document.body.appendChild(el)
+    setTimeout(()=>{ el.remove() }, 1400)
+  }
+
+  // 初始示例
+  patternEl.value = '(foo)\\s+(bar)'
+  setFlags('gi')
+  textEl.value = 'Foo   bar\nfoo\tbar\nother line\nfoobar'
+  run()
+})()
+
+/**
+匹配网址
+[a-zA-Z][a-zA-Z0-9+.-]*:\/\/[^\s"'<>]+
+
+
+error:  (?:[a-zA-Z][a-zA-Z0-9+.-]*:\/\/)?(?:[a-zA-Z0-9-]+\.)*test\.com(?:\:\d+)?(?:\/[^\s"'<>]*)?
+success:(?:[a-zA-Z][a-zA-Z0-9+.-]*:\/\/)?(?:[a-zA-Z0-9-]+\.)*test\.com(?::\d+)?(?:\/[^\s"'<>]*)?
+
+error:    (?i)^\s*(?:(?:"?(?:token|key|secret|password)"?\s*[:=]\s*(['"]?)[A-Za-z0-9+/=_-]{8,}\1\s*[;,]?\s*$)|(?:[\w.-]*(?:token|key|secret|password)\b\s*=\s*(['"]?)[^\s#'"]+\2\s*(?:#.*)?$))
+success:  ^\s*(?:"?(?:token|key|secret|password)"?\s*[:=]\s*(?:(?<q1>['"])[A-Za-z0-9+/=_-]{8,}\k<q1>|[A-Za-z0-9+/=_-]{8,})\s*[;,]?\s*$|[\w.-]*(?:token|key|secret|password)\b\s*=\s*(?:(?<q2>['"])[^\s#'"]+\k<q2>|[^\s#'"]+)\s*(?:#.*)?$)
+**/
+</script>
+</body>
+</html>

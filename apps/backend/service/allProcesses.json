@@ -1,0 +1,204 @@
+[
+    {
+        "name": "sp_get_dashboard_data",
+        "nodes": [
+            {
+                "id": "ods.orders",
+                "label": "ods.orders",
+                "layer": "ODS",
+                "fields": [
+                    {
+                        "name": "order_id",
+                        "type": "string"
+                    },
+                    {
+                        "name": "user_id",
+                        "type": "string"
+                    }
+                ]
+            },
+            {
+                "id": "dwd.orders_detail",
+                "label": "dwd.orders_detail",
+                "layer": "DWD",
+                "fields": [
+                    {
+                        "name": "order_id",
+                        "type": "string"
+                    },
+                    {
+                        "name": "user_id",
+                        "type": "string"
+                    }
+                ]
+            },
+            {
+                "id": "dws.user_profile",
+                "label": "dws.user_profile",
+                "layer": "DWS",
+                "fields": [
+                    {
+                        "name": "u_id",
+                        "type": "string"
+                    },
+                    {
+                        "name": "total_payment",
+                        "type": "number"
+                    }
+                ]
+            },
+            {
+                "id": "ads.user_dashboard",
+                "label": "ads.user_dashboard",
+                "layer": "ADS",
+                "fields": [
+                    {
+                        "name": "user_id",
+                        "type": "string"
+                    },
+                    {
+                        "name": "payment_amount",
+                        "type": "number"
+                    }
+                ]
+            },
+            {
+                "id": "dim.product_info",
+                "label": "dim.product_info",
+                "layer": "DIM",
+                "fields": [
+                    {
+                        "name": "product_id",
+                        "type": "string"
+                    },
+                    {
+                        "name": "product_name",
+                        "type": "string"
+                    }
+                ]
+            },
+            {
+                "id": "sp_get_dashboard_data",
+                "label": "sp_get_dashboard_data()",
+                "layer": "PROC",
+                "fields": [
+                    {
+                        "name": "out_user_name",
+                        "type": "string"
+                    },
+                    {
+                        "name": "out_amount",
+                        "type": "decimal"
+                    }
+                ]
+            }
+        ],
+        "edges": [
+            {
+                "source": "ods.orders",
+                "target": "dwd.orders_detail",
+                "label": "ODS → DWD",
+                "mapping": [
+                    "user_id → user_id"
+                ]
+            },
+            {
+                "source": "dwd.orders_detail",
+                "target": "dws.user_profile",
+                "label": "DWD → DWS",
+                "mapping": [
+                    "user_id → u_id"
+                ]
+            },
+            {
+                "source": "dws.user_profile",
+                "target": "ads.user_dashboard",
+                "label": "DWS → ADS",
+                "mapping": [
+                    "u_id → user_id"
+                ]
+            },
+            {
+                "source": "ads.user_dashboard",
+                "target": "sp_get_dashboard_data",
+                "label": "CALL input",
+                "mapping": [
+                    "user_id → in_user_id",
+                    "payment_amount → out_amount"
+                ]
+            },
+            {
+                "source": "dim.product_info",
+                "target": "sp_get_dashboard_data",
+                "label": "CALL join",
+                "mapping": [
+                    "product_id → out_user_name"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "sp_user_stats",
+        "nodes": [
+            {
+                "id": "dim.region_info111",
+                "label": "dim.region_info",
+                "layer": "DIM",
+                "fields": [
+                    {
+                        "name": "region_code",
+                        "type": "string"
+                    }
+                ]
+            },
+            {
+                "id": "ads.user_summary",
+                "label": "ads.user_summary",
+                "layer": "ADS",
+                "fields": [
+                    {
+                        "name": "user_id",
+                        "type": "string"
+                    },
+                    {
+                        "name": "region_code",
+                        "type": "string"
+                    }
+                ]
+            },
+            {
+                "id": "sp_user_stats",
+                "label": "sp_user_stats()",
+                "layer": "PROC",
+                "fields": [
+                    {
+                        "name": "region_code",
+                        "type": "string"
+                    },
+                    {
+                        "name": "user_count",
+                        "type": "int"
+                    }
+                ]
+            }
+        ],
+        "edges": [
+            {
+                "source": "ads.user_summary",
+                "target": "sp_user_stats",
+                "label": "CALL input",
+                "mapping": [
+                    "region_code → region_code"
+                ]
+            },
+            {
+                "source": "dim.region_info",
+                "target": "sp_user_stats",
+                "label": "JOIN ref",
+                "mapping": [
+                    "region_code"
+                ]
+            }
+        ]
+    }
+]

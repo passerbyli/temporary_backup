@@ -1,0 +1,25 @@
+<plugin>
+  <groupId>io.openapitools.swagger</groupId>
+  <artifactId>swagger-maven-plugin</artifactId>
+  <version>2.1.5</version>
+  <configuration>
+    <!-- 告诉插件要扫描哪些包（放你JAX-RS资源类的基础包，可配多个） -->
+    <resourcePackages>
+      <resourcePackage>com.your.company.api</resourcePackage>
+      <!-- <resourcePackage>com.your.company.v2</resourcePackage> -->
+    </resourcePackages>
+
+    <!-- 输出位置/格式 -->
+    <outputDirectory>${project.build.directory}</outputDirectory>
+    <outputFilename>openapi</outputFilename>
+    <outputFormats>JSON,YAML</outputFormats>
+    <prettyPrint>true</prettyPrint>
+  </configuration>
+  <executions>
+    <execution>
+      <goals>
+        <goal>generate</goal>
+      </goals>
+    </execution>
+  </executions>
+</plugin>

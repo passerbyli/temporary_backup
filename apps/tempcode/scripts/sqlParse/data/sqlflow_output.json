@@ -1,0 +1,26 @@
+[
+	{
+		"databaseType": "PostgreSQL",
+		"edges": [],
+		"fieldEdges": [],
+		"file": "/Users/lihaomin/projects/GitHub/test/scripts/sqlParse/data/etl_user_orders.sql",
+		"functionNames": {},
+		"nodes": [],
+		"procedures": {},
+		"scriptIndex": 1,
+		"sourceTables": [],
+		"targetTables": []
+	},
+	{
+		"databaseType": "PostgreSQL",
+		"edges": [],
+		"fieldEdges": [],
+		"file": "/Users/lihaomin/projects/GitHub/test/scripts/sqlParse/data/etl_user_orders.sql",
+		"functionNames": {},
+		"nodes": [],
+		"procedures": {},
+		"scriptIndex": 5,
+		"sourceTables": [],
+		"targetTables": []
+	}
+]

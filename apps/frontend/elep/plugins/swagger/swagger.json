@@ -1,0 +1,240 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+        "title": "dotnetCore 接口文档――Netcore 3.0",
+        "description": "dotnetCore HTTP API V1",
+        "contact": {
+            "name": "dotnetCore",
+            "url": "https://www.baidu.com",
+            "email": "dotnetCore@xxx.com"
+        },
+        "license": {
+            "name": "dotnetCore",
+            "url": "https://www.baidu.com"
+        },
+        "version": "V1"
+    },
+    "paths": {
+        "/WeatherForecast/createTask": {
+            "post": {
+                "tags": [
+                    "WeatherForecast"
+                ],
+                "summary": "创建任务",
+                "operationId": "WeatherForecast_post_CreateTask_WeatherForecast_createTask",
+                "requestBody": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CusTask"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CusTask"
+                                    }
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CusTask"
+                                    }
+                                }
+                            },
+                            "text/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CusTask"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/WeatherForecast/createTasks": {
+            "post": {
+                "tags": [
+                    "WeatherForecast"
+                ],
+                "summary": "批量创建任务",
+                "operationId": "WeatherForecast_post_CreateTasks_WeatherForecast_createTasks",
+                "requestBody": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/CusTask"
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CusTask"
+                                    }
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CusTask"
+                                    }
+                                }
+                            },
+                            "text/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CusTask"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/WeatherForecast/GetWeather": {
+            "get": {
+                "tags": [
+                    "WeatherForecast"
+                ],
+                "summary": "获取天气",
+                "operationId": "WeatherForecast_get_Get_WeatherForecast_GetWeather",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/WeatherForecast"
+                                    }
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/WeatherForecast"
+                                    }
+                                }
+                            },
+                            "text/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/WeatherForecast"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "CusTask": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "maxLength": 10,
+                        "minLength": 3,
+                        "type": "string",
+                        "description": "标题",
+                        "nullable": true
+                    },
+                    "context": {
+                        "type": "string",
+                        "description": "内容",
+                        "nullable": true
+                    },
+                    "createTime": {
+                        "type": "string",
+                        "description": "创建时间",
+                        "nullable": true
+                    },
+                    "userInfo": {
+                        "$ref": "#/components/schemas/UserInfo"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "UserInfo": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "用户名称",
+                        "nullable": true
+                    },
+                    "age": {
+                        "type": "string",
+                        "description": "用户年龄",
+                        "nullable": true
+                    }
+                },
+                "additionalProperties": false,
+                "description": "用户信息"
+            },
+            "WeatherForecast": {
+                "type": "object",
+                "properties": {
+                    "date": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "temperatureC": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "temperatureF": {
+                        "type": "integer",
+                        "format": "int32",
+                        "readOnly": true
+                    },
+                    "summary": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "additionalProperties": false
+            }
+        },
+        "securitySchemes": {
+            "oauth2": {
+                "type": "apiKey",
+                "description": "JWT授权(数据将在请求头中进行传输) 直接在下框中输入Bearer {token}（注意两者之间是一个空格）\"",
+                "name": "Authorization",
+                "in": "header"
+            }
+        }
+    }
+}

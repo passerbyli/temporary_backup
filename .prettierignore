@@ -1,0 +1,11 @@
+# .prettierignore
+# 忽略所有文件
+*
+# 除了以下文件
+!.prettierignore
+!.prettierrc.js
+dist
+public
+.local
+node_modules
+pnpm-lock.yaml

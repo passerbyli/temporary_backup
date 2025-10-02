@@ -1,4 +1,5 @@
-const { app, BrowserWindow, ipcMain, globalShortcut, screen, Menu } = require('electron')
+/* eslint-disable no-undef */
+const { app, BrowserWindow, ipcMain, globalShortcut, Menu } = require('electron')
 
 const path = require('node:path')
 
@@ -16,6 +17,7 @@ if (!gotTheLock) {
 } else {
   // 监听 second-instance 事件（第二次启动时触发）
   app.on('second-instance', (event, argv, workingDirectory) => {
+    console.log(event, argv, workingDirectory)
     if (win) {
       if (win.isMinimized()) win.restore()
       win.focus()
@@ -172,7 +174,7 @@ function createWindow() {
 }
 
 app.on('before-quit', () => {
-  isQuiting = true
+  // isquiring = true
 })
 
 ipcMain.handle('refresh-window', () => {

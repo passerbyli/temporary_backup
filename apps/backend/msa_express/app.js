@@ -1,7 +1,7 @@
 const express = require('express')
 const session = require('express-session')
 const fs = require('fs')
-var url = require('url')
+const url = require('url')
 const bodyParser = require('body-parser')
 const faker = require('faker')
 const cors = require('cors')
@@ -185,7 +185,7 @@ app.get('/api/lineage/procs', (req, res) => {
 })
 
 app.get('/api/lineage/graph',async (req, res) => {
-  var query = url.parse(req.url, true).query
+  const query = url.parse(req.url, true).query
   console.log(query.proc)
   const messages =await readJsonFile('./allProcesses.json')
   let message = {}

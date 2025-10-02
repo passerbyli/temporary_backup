@@ -2,10 +2,11 @@
   "name": "temporary_backup",
   "version": "1.0.0",
   "description": "",
+  "types": "module",
   "main": "index.js",
   "scripts": {
-    "lint:prettier": "prettier --write \"**/*.{js,ts,mjs,cjs,json,tsx,css,less,scss,vue,html,md}\"",
-    "lint:eslint": "eslint",
+    "prettier": "prettier --write \"**/*.{ts,tsx,js,jsx,mjs,cjs,css,less,scss,vue,html,md}\"",
+    "eslint": "eslint",
     "spellcheck": "cspell lint \"(packages|apps)/**/*.{ts,tsx,js,jsx,mjs,cjs,css,less,scss,vue,html,md}\"",
     "commit": "git-cz",
     "prepare": "husky",
@@ -37,10 +38,11 @@
     "@types/node": "^18.19.129",
     "@vitejs/plugin-vue": "^6.0.1",
     "commitizen": "^4.3.1",
-    "cspell": "^9.2.1",
+    "cspell": "^8.19.4",
     "cz-git": "^1.12.0",
     "eslint": "^9.36.0",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-vue": "^10.5.0",
     "globals": "^16.4.0",
     "husky": "^9.1.7",
@@ -54,5 +56,11 @@
     "rollup-plugin-typescript2": "^0.36.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.45.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "string-width@*": "4.2.3",
+      "wrap-ansi@*": "7.0.0"
+    }
   }
 }

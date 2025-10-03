@@ -5,21 +5,19 @@
   </el-config-provider>
 </template>
 
-
 <script setup>
-import { RouterView } from 'vue-router'
-import TitleBar from './components/TitleBar.vue'
+import { RouterView } from 'vue-router';
+import TitleBar from './components/TitleBar.vue';
 
 function minimize() {
-  window.electronAPI?.minimize()
+  window.electronAPI?.minimize();
 }
 function maximize() {
-  window.electronAPI?.maximize()
+  window.electronAPI?.maximize();
 }
 function handleDoubleClick() {
-  window.electronAPI?.toggleMaximize()
+  window.electronAPI?.toggleMaximize();
 }
-
 </script>
 <style>
 body {

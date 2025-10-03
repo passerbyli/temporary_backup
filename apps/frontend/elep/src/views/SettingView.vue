@@ -41,10 +41,10 @@
             <el-col :span="12">
               <el-form-item label="默认文件路径">
                 <el-input type="text" v-model="form.global.basePath">
-              <template #append>
-                <el-button :icon="FolderOpened" @click="selectFolder" />
-              </template>
-            </el-input>
+                  <template #append>
+                    <el-button :icon="FolderOpened" @click="selectFolder" />
+                  </template>
+                </el-input>
               </el-form-item>
             </el-col>
           </el-row>
@@ -107,43 +107,43 @@
 </template>
 
 <script setup>
-import { FolderOpened } from '@element-plus/icons-vue'
-import { reactive, onMounted, ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import { defaultForm } from '../services/defaultForm.js'
-import { loadConfig, saveConfig } from '../services/configService'
-const form = reactive(structuredClone(defaultForm))
+import { FolderOpened } from '@element-plus/icons-vue';
+import { reactive, onMounted, ref } from 'vue';
+import { ElMessage } from 'element-plus';
+import { defaultForm } from '../services/defaultForm.js';
+import { loadConfig, saveConfig } from '../services/configService';
+const form = reactive(structuredClone(defaultForm));
 
-const activeTab = ref('global')
+const activeTab = ref('global');
 
 onMounted(async () => {
-  const config = await loadConfig()
-  Object.assign(form, defaultForm, config)
-})
+  const config = await loadConfig();
+  Object.assign(form, defaultForm, config);
+});
 
 async function save() {
-  await saveConfig(form)
-  ElMessage.success('配置已保存')
+  await saveConfig(form);
+  ElMessage.success('配置已保存');
 }
 
 function reset() {
-  loadConfig().then(config => {
-    Object.assign(form, config)
-    ElMessage.warning('已重置为当前配置')
-  })
+  loadConfig().then((config) => {
+    Object.assign(form, config);
+    ElMessage.warning('已重置为当前配置');
+  });
 }
-async function  selectFolder(){
+async function selectFolder() {
   if (window.ipc) {
-          await window.ipc
-            .sendInvoke('toMain', {
-              event: 'select-folder',
-            })
-            .then((result) => {
-              if (result) {
-                form.global.basePath = result[0]
-              }
-            })
+    await window.ipc
+      .sendInvoke('toMain', {
+        event: 'select-folder',
+      })
+      .then((result) => {
+        if (result) {
+          form.global.basePath = result[0];
         }
+      });
+  }
 }
 </script>
 

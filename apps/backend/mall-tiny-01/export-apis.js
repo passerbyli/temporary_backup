@@ -19,19 +19,19 @@
  *   --mvnArgs   额外传给 mvn 的参数（例如 "-Pdev -DskipTests"）
  */
 
-import { execSync } from "node:child_process";
-import fs from "node:fs";
-import path from "node:path";
-import * as xlsx from "xlsx";
+import { execSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import * as xlsx from 'xlsx';
 
 function parseArgs(argv) {
   const args = {};
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     const next = argv[i + 1];
-    if (a.startsWith("--")) {
+    if (a.startsWith('--')) {
       const key = a.slice(2);
-      if (!next || next.startsWith("--")) {
+      if (!next || next.startsWith('--')) {
         args[key] = true;
       } else {
         args[key] = next;
@@ -46,7 +46,7 @@ function sh(cmd, cwd) {
   console.log(`$ ${cmd}`);
   execSync(cmd, {
     cwd,
-    stdio: "inherit",
+    stdio: 'inherit',
     env: process.env,
   });
 }
@@ -56,18 +56,18 @@ function ensureDir(p) {
 }
 
 function readJson(p) {
-  return JSON.parse(fs.readFileSync(p, "utf-8"));
+  return JSON.parse(fs.readFileSync(p, 'utf-8'));
 }
 
 function writeCsv(rows, file) {
   const esc = (v) => {
-    if (v == null) return "";
+    if (v == null) return '';
     v = String(v);
     if (/[",\n]/.test(v)) return `"${v.replace(/"/g, '""')}"`;
     return v;
   };
-  const text = rows.map((r) => r.map(esc).join(",")).join("\n");
-  fs.writeFileSync(file, text, "utf-8");
+  const text = rows.map((r) => r.map(esc).join(',')).join('\n');
+  fs.writeFileSync(file, text, 'utf-8');
   console.log(`✔ ${file}`);
 }
 
@@ -75,51 +75,34 @@ function writeCsv(rows, file) {
 function makeResolver(spec) {
   const schemas = spec.components?.schemas || {};
   function byRef($ref) {
-    if (!$ref?.startsWith("#/components/schemas/")) return null;
-    const name = $ref.split("/").pop();
+    if (!$ref?.startsWith('#/components/schemas/')) return null;
+    const name = $ref.split('/').pop();
     return schemas[name] ? { name, schema: schemas[name] } : null;
   }
   return { byRef, schemas };
 }
 
-function flattenSchema(
-  name,
-  schema,
-  resolver,
-  prefix = "",
-  requiredSet = new Set(),
-  out = []
-) {
+function flattenSchema(name, schema, resolver, prefix = '', requiredSet = new Set(), out = []) {
   // 仅处理常见 object/array/$ref；组合(allOf/oneOf) 做简单展开
   if (!schema) return out;
 
   if (schema.$ref) {
     const hit = resolver.byRef(schema.$ref);
-    if (hit)
-      return flattenSchema(
-        hit.name,
-        hit.schema,
-        resolver,
-        prefix,
-        requiredSet,
-        out
-      );
+    if (hit) return flattenSchema(hit.name, hit.schema, resolver, prefix, requiredSet, out);
   }
 
   const allOf = schema.allOf;
   if (Array.isArray(allOf) && allOf.length) {
-    allOf.forEach((s) =>
-      flattenSchema(name, s, resolver, prefix, requiredSet, out)
-    );
+    allOf.forEach((s) => flattenSchema(name, s, resolver, prefix, requiredSet, out));
     return out;
   }
 
-  if (schema.type === "array" && schema.items) {
-    const pfx = prefix ? `${prefix}[]` : "[]";
+  if (schema.type === 'array' && schema.items) {
+    const pfx = prefix ? `${prefix}[]` : '[]';
     return flattenSchema(name, schema.items, resolver, pfx, requiredSet, out);
   }
 
-  if (schema.type === "object" || schema.properties) {
+  if (schema.type === 'object' || schema.properties) {
     const req = new Set(schema.required || []);
     for (const [k, v] of Object.entries(schema.properties || {})) {
       const p = prefix ? `${prefix}.${k}` : k;
@@ -130,21 +113,21 @@ function flattenSchema(
           continue;
         }
       }
-      if (v?.type === "object" || v?.properties || v?.allOf) {
+      if (v?.type === 'object' || v?.properties || v?.allOf) {
         flattenSchema(name, v, resolver, p, req, out);
         continue;
       }
-      if (v?.type === "array" && v.items) {
+      if (v?.type === 'array' && v.items) {
         flattenSchema(name, v, resolver, `${p}[]`, req, out);
         continue;
       }
       out.push({
         schema: name,
         field: p,
-        type: v?.type || (v?.$ref ? v.$ref.split("/").pop() : ""),
-        format: v?.format || "",
-        required: req.has(k) ? "Y" : "",
-        description: v?.description || "",
+        type: v?.type || (v?.$ref ? v.$ref.split('/').pop() : ''),
+        format: v?.format || '',
+        required: req.has(k) ? 'Y' : '',
+        description: v?.description || '',
       });
     }
     return out;
@@ -154,10 +137,10 @@ function flattenSchema(
   out.push({
     schema: name,
     field: prefix || name,
-    type: schema.type || "",
-    format: schema.format || "",
-    required: requiredSet.has(prefix) ? "Y" : "",
-    description: schema.description || "",
+    type: schema.type || '',
+    format: schema.format || '',
+    required: requiredSet.has(prefix) ? 'Y' : '',
+    description: schema.description || '',
   });
   return out;
 }
@@ -167,59 +150,52 @@ function flattenSchema(
   const args = parseArgs(process.argv);
   const packages = args.packages;
   if (!packages) {
-    console.error(
-      "❌ 缺少必填参数 --packages  (例如 --packages com.your.api,com.foo.bar)"
-    );
+    console.error('❌ 缺少必填参数 --packages  (例如 --packages com.your.api,com.foo.bar)');
     process.exit(1);
   }
-  const project = path.resolve(args.project || ".");
-  const outDir = path.resolve(
-    args.out || path.join(project, "target", "api-export")
-  );
-  const mvnArgs = args.mvnArgs || "-DskipTests";
+  const project = path.resolve(args.project || '.');
+  const outDir = path.resolve(args.out || path.join(project, 'target', 'api-export'));
+  const mvnArgs = args.mvnArgs || '-DskipTests';
 
   // 1) 先编译（让目标类可被扫描）
   sh(`mvn -q ${mvnArgs} package`, project);
 
   // 2) 直接命令行调用 swagger-maven-plugin（无需改 POM）
-  const genOutDir = path.join(project, "target");
-  const outputFilename = "openapi";
-  const plugin = "org.openapitools.swagger:swagger-maven-plugin:2.1.5:generate";
+  const genOutDir = path.join(project, 'target');
+  const outputFilename = 'openapi';
+  const plugin = 'org.openapitools.swagger:swagger-maven-plugin:2.1.5:generate';
   const cmd = [
-    "mvn -q",
+    'mvn -q',
     mvnArgs,
     plugin,
     `-DresourcePackages=${packages}`,
-    `-DoutputDirectory=${genOutDir.replace(/\\/g, "/")}`,
+    `-DoutputDirectory=${genOutDir.replace(/\\/g, '/')}`,
     `-DoutputFilename=${outputFilename}`,
     `-DoutputFormats=JSON`,
     `-DprettyPrint=true`,
-  ].join(" ");
+  ].join(' ');
   sh(cmd, project);
 
   const openapiPath = path.join(genOutDir, `${outputFilename}.json`);
   if (!fs.existsSync(openapiPath)) {
-    console.error(
-      `❌ 未找到 ${openapiPath}。检查包名是否正确（--packages），或该项目是否使用 JAX-RS 注解。`
-    );
+    console.error(`❌ 未找到 ${openapiPath}。检查包名是否正确（--packages），或该项目是否使用 JAX-RS 注解。`);
     process.exit(2);
   }
 
   ensureDir(outDir);
-  fs.copyFileSync(openapiPath, path.join(outDir, "openapi.json"));
+  fs.copyFileSync(openapiPath, path.join(outDir, 'openapi.json'));
   console.log(`✔ 生成 OpenAPI：${openapiPath}`);
 
   // 3) 解析 openapi.json → endpoints.csv
   const spec = readJson(openapiPath);
-  const rows = [["Method", "Path", "Summary", "Params", "Responses"]];
+  const rows = [['Method', 'Path', 'Summary', 'Params', 'Responses']];
   for (const [p, item] of Object.entries(spec.paths || {})) {
     for (const [method, op] of Object.entries(item)) {
       const params = [];
       for (const prm of op.parameters || []) {
         const schema = prm.schema || {};
-        const t =
-          schema.type || (schema.$ref ? schema.$ref.split("/").pop() : "-");
-        params.push(`${prm.name}:${prm.in}:${t}${prm.required ? "*" : ""}`);
+        const t = schema.type || (schema.$ref ? schema.$ref.split('/').pop() : '-');
+        params.push(`${prm.name}:${prm.in}:${t}${prm.required ? '*' : ''}`);
       }
       const rb = op.requestBody;
       if (rb?.content) {
@@ -228,41 +204,26 @@ function flattenSchema(
       }
       const res = [];
       for (const [code, r] of Object.entries(op.responses || {})) {
-        const ct = r.content ? Object.keys(r.content)[0] : "no-content";
+        const ct = r.content ? Object.keys(r.content)[0] : 'no-content';
         res.push(`${code}:${ct}`);
       }
-      rows.push([
-        method.toUpperCase(),
-        p,
-        op.summary || "",
-        params.join("; "),
-        res.join("; "),
-      ]);
+      rows.push([method.toUpperCase(), p, op.summary || '', params.join('; '), res.join('; ')]);
     }
   }
-  writeCsv(rows, path.join(outDir, "endpoints.csv"));
+  writeCsv(rows, path.join(outDir, 'endpoints.csv'));
 
   // 4) 解析 schemas → schemas.xlsx（单表扁平字段）
   const resolver = makeResolver(spec);
-  const allRows = [
-    ["Schema", "Field", "Type", "Format", "Required", "Description"],
-  ];
+  const allRows = [['Schema', 'Field', 'Type', 'Format', 'Required', 'Description']];
   for (const [name, schema] of Object.entries(resolver.schemas)) {
     flattenSchema(name, schema, resolver).forEach((r) =>
-      allRows.push([
-        r.schema,
-        r.field,
-        r.type,
-        r.format,
-        r.required,
-        r.description,
-      ])
+      allRows.push([r.schema, r.field, r.type, r.format, r.required, r.description]),
     );
   }
   const wb = xlsx.utils.book_new();
   const ws = xlsx.utils.aoa_to_sheet(allRows);
-  xlsx.utils.book_append_sheet(wb, ws, "schemas");
-  const xlsxPath = path.join(outDir, "schemas.xlsx");
+  xlsx.utils.book_append_sheet(wb, ws, 'schemas');
+  const xlsxPath = path.join(outDir, 'schemas.xlsx');
   xlsx.writeFile(wb, xlsxPath);
   console.log(`✔ ${xlsxPath}`);
 

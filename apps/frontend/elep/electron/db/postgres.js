@@ -1,4 +1,4 @@
-const { Pool } = require('pg')
+const { Pool } = require('pg');
 
 // 使用配置文件或硬编码方式配置数据库连接
 const pool = new Pool({
@@ -7,7 +7,7 @@ const pool = new Pool({
   user: 'postgres',
   password: 'admin',
   database: 'lihaomin',
-})
+});
 
 module.exports = {
   async getAllTables() {
@@ -18,10 +18,10 @@ module.exports = {
       LEFT JOIN ads_dl.schema_metadata s ON t.schema_uuid = s.uuid
       LEFT JOIN ads_dl.data_source d ON s.data_source_uuid = d.uuid
       ORDER BY t.created_at DESC
-    `
-    const res = await pool.query(sql)
+    `;
+    const res = await pool.query(sql);
 
-    return res.rows
+    return res.rows;
   },
 
   async getTableDetail(tableId) {
@@ -31,8 +31,8 @@ module.exports = {
       LEFT JOIN schema_metadata s ON t.schema_uuid = s.uuid
       LEFT JOIN data_source d ON s.data_source_uuid = d.uuid
       WHERE t.uuid = $1
-    `
-    const table = await pool.query(sql, [tableId])
+    `;
+    const table = await pool.query(sql, [tableId]);
 
     const fields = await pool.query(
       `
@@ -42,11 +42,11 @@ module.exports = {
       ORDER BY created_at
     `,
       [tableId],
-    )
+    );
 
     return {
       ...table.rows[0],
       fields: fields.rows,
-    }
+    };
   },
-}
+};

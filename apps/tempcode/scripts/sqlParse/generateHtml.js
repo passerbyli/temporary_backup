@@ -1,14 +1,12 @@
-const fs = require("fs");
+const fs = require('fs');
 
 // 读取 SQL 文件
-const sqlFilePath = "./sql_input.sql"; // 使用你的路径
-const sqlContent = fs.readFileSync(sqlFilePath, "utf-8");
+const sqlFilePath = './sql_input.sql'; // 使用你的路径
+const sqlContent = fs.readFileSync(sqlFilePath, 'utf-8');
 
 // 正则表达式匹配模式
-const insertRegex =
-  /INSERT\s+INTO\s+`?(\w+)`?\.`?(\w+)`?\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\);/gis;
-const updateRegex =
-  /UPDATE\s+`?(\w+)`?\.`?(\w+)`?\s+SET\s+([^;]+)\s*WHERE\s+([^;]+);/gis;
+const insertRegex = /INSERT\s+INTO\s+`?(\w+)`?\.`?(\w+)`?\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\);/gis;
+const updateRegex = /UPDATE\s+`?(\w+)`?\.`?(\w+)`?\s+SET\s+([^;]+)\s*WHERE\s+([^;]+);/gis;
 
 let tableData = {};
 
@@ -17,12 +15,8 @@ let match;
 while ((match = insertRegex.exec(sqlContent)) !== null) {
   const schemaName = match[1];
   const tableName = match[2];
-  const columns = match[3]
-    .split(",")
-    .map((col) => col.trim().replace(/`/g, "").replace(/['"]/g, ""));
-  const values = match[4]
-    .split(",")
-    .map((val) => val.trim().replace(/['"]/g, ""));
+  const columns = match[3].split(',').map((col) => col.trim().replace(/`/g, '').replace(/['"]/g, ''));
+  const values = match[4].split(',').map((val) => val.trim().replace(/['"]/g, ''));
 
   const tableKey = `${schemaName}.${tableName}`;
   if (!tableData[tableKey]) {
@@ -35,7 +29,7 @@ while ((match = insertRegex.exec(sqlContent)) !== null) {
   }
 
   tableData[tableKey].operations.push({
-    operation: "INSERT",
+    operation: 'INSERT',
     values: values,
     condition: null,
   });
@@ -45,15 +39,11 @@ while ((match = insertRegex.exec(sqlContent)) !== null) {
 while ((match = updateRegex.exec(sqlContent)) !== null) {
   const schemaName = match[1];
   const tableName = match[2];
-  const setClauses = match[3].split(",").map((clause) => clause.trim());
+  const setClauses = match[3].split(',').map((clause) => clause.trim());
   const whereClause = match[4];
 
-  const columns = setClauses.map((clause) =>
-    clause.split("=")[0].trim().replace(/`/g, "").replace(/['"]/g, "")
-  );
-  const values = setClauses.map((clause) =>
-    clause.split("=")[1].trim().replace(/['"]/g, "")
-  );
+  const columns = setClauses.map((clause) => clause.split('=')[0].trim().replace(/`/g, '').replace(/['"]/g, ''));
+  const values = setClauses.map((clause) => clause.split('=')[1].trim().replace(/['"]/g, ''));
 
   const tableKey = `${schemaName}.${tableName}`;
   if (!tableData[tableKey]) {
@@ -66,7 +56,7 @@ while ((match = updateRegex.exec(sqlContent)) !== null) {
   }
 
   tableData[tableKey].operations.push({
-    operation: "UPDATE",
+    operation: 'UPDATE',
     values: values,
     condition: whereClause,
   });
@@ -75,11 +65,11 @@ while ((match = updateRegex.exec(sqlContent)) !== null) {
 // 转义HTML实体
 function escapeHtml(text) {
   return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 // 生成 HTML 内容
@@ -107,9 +97,7 @@ Object.values(tableData).forEach(({ schema, table, columns, operations }) => {
         <table>
             <tr>
                 <th>Operation</th>
-                ${columns
-                  .map((column) => `<th>${escapeHtml(column)}</th>`)
-                  .join("")}
+                ${columns.map((column) => `<th>${escapeHtml(column)}</th>`).join('')}
                 <th>Condition</th>
             </tr>
     `;
@@ -118,10 +106,8 @@ Object.values(tableData).forEach(({ schema, table, columns, operations }) => {
     htmlContent += `
             <tr>
                 <td>${operation}</td>
-                ${values
-                  .map((value) => `<td>${escapeHtml(value)}</td>`)
-                  .join("")}
-                <td><pre>${escapeHtml(condition || "")}</pre></td>
+                ${values.map((value) => `<td>${escapeHtml(value)}</td>`).join('')}
+                <td><pre>${escapeHtml(condition || '')}</pre></td>
             </tr>
         `;
   });
@@ -136,7 +122,7 @@ htmlContent += `
 `;
 
 // 写入 HTML 文件
-const outputFilePath = "show.html";
-fs.writeFileSync(outputFilePath, htmlContent, "utf-8");
+const outputFilePath = 'show.html';
+fs.writeFileSync(outputFilePath, htmlContent, 'utf-8');
 
 console.log(`HTML file generated: ${outputFilePath}`);

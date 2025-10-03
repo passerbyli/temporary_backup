@@ -13,18 +13,12 @@ function processData(data) {
   return data.map((item) => {
     // 规则 1：匹配 name 或 note 中包含[新芒，xinmang，星芒，xingmang，xin_mang]，但不包含 [id, code, number]
     const nameNote = item.name + item.note;
-    if (
-      /[新芒|xinmang|星芒|xingmang|xin_mang]/.test(nameNote) &&
-      !/[id|code|number]/.test(nameNote)
-    ) {
+    if (/[新芒|xinmang|星芒|xingmang|xin_mang]/.test(nameNote) && !/[id|code|number]/.test(nameNote)) {
       item._name = `name_${item.id}`;
     }
 
     // 规则 2：匹配 name 或 note 中包含 [合同，contract]，但不包含 [编号，id, code, number]
-    if (
-      /[合同|contract]/.test(nameNote) &&
-      !/[编号|id|code|number]/.test(nameNote)
-    ) {
+    if (/[合同|contract]/.test(nameNote) && !/[编号|id|code|number]/.test(nameNote)) {
       item._contract = `contract_${item.id}`;
     }
 
@@ -42,23 +36,23 @@ const data = [
   {
     id: 1,
     brand_id: 49,
-    name: "银色星芒刺绣网纱底裤",
-    keywords: "银色星芒刺绣网纱底裤",
-    note: "银色星芒刺绣网纱底裤",
+    name: '银色星芒刺绣网纱底裤',
+    keywords: '银色星芒刺绣网纱底裤',
+    note: '银色星芒刺绣网纱底裤',
   },
   {
     id: 1,
     brand_id: 49,
-    name: "销售合同",
-    keywords: "银色星芒刺绣网纱底裤",
-    note: "销售合同",
+    name: '销售合同',
+    keywords: '银色星芒刺绣网纱底裤',
+    note: '销售合同',
   },
   {
     id: 1,
     brand_id: 49,
-    name: "销售合同编号",
-    keywords: "银色星芒刺绣网纱底裤",
-    note: "销售合同编号",
+    name: '销售合同编号',
+    keywords: '银色星芒刺绣网纱底裤',
+    note: '销售合同编号',
   },
 ];
 

@@ -1,10 +1,11 @@
+/* eslint-disable no-undef */
 /**
  * gen-postman.js
  * 从 appList 自动生成 Postman Collection v2.1 JSON 文件
  * 使用方法：node gen-postman.js
  */
 
-const fs = require('fs')
+const fs = require('fs');
 
 /**
  * 待生成的接口清单（可从数据库/配置文件读取，这里直接写死示例）
@@ -19,16 +20,16 @@ const appList = [
     name: '订单ETL血缘',
     method: 'POST',
     body: { id: 'l001' },
-    header: [] // 可选：如果不传，代码会在需要时自动补 Content-Type
+    header: [], // 可选：如果不传，代码会在需要时自动补 Content-Type
   },
   {
     url: 'http://localhost:8081/api/neo4j/relation/find?relType=LINEAGE&fromId=t001',
     name: '查询血缘（GET示例，自动忽略body）',
     method: 'GET',
     body: { ignored: true }, // 会被忽略
-    header: []
-  }
-]
+    header: [],
+  },
+];
 
 /**
  * Postman 的单条请求模板
@@ -47,19 +48,19 @@ const itemTpl = {
       host: [],
       port: '',
       path: [],
-      query: []
-    }
+      query: [],
+    },
   },
-  response: []
-}
+  response: [],
+};
 
 /**
  * Collection 外层信息（可按需修改）
  */
 const collectionInfo = {
   name: 'Neo4j API Collection',
-  schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json'
-}
+  schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
+};
 
 /**
  * 工具：判断方法是否允许 body
@@ -68,8 +69,8 @@ const collectionInfo = {
  * @returns {boolean}
  */
 function methodAllowsBody(method) {
-  const m = String(method || '').toUpperCase()
-  return !['GET', 'HEAD'].includes(m)
+  const m = String(method || '').toUpperCase();
+  return !['GET', 'HEAD'].includes(m);
 }
 
 /**
@@ -78,7 +79,7 @@ function methodAllowsBody(method) {
  * @returns {any}
  */
 function deepClone(obj) {
-  return JSON.parse(JSON.stringify(obj))
+  return JSON.parse(JSON.stringify(obj));
 }
 
 /**
@@ -89,14 +90,16 @@ function deepClone(obj) {
  * @returns {Array}
  */
 function ensureJsonContentType(headerArr, hasJsonBody) {
-  const headers = Array.isArray(headerArr) ? deepClone(headerArr) : []
-  if (!hasJsonBody) return headers
+  const headers = Array.isArray(headerArr) ? deepClone(headerArr) : [];
+  if (!hasJsonBody) return headers;
 
-  const hasCT = headers.some(h => h.key?.toLowerCase() === 'content-type' && /application\/json/i.test(h.value || ''))
+  const hasCT = headers.some(
+    (h) => h.key?.toLowerCase() === 'content-type' && /application\/json/i.test(h.value || ''),
+  );
   if (!hasCT) {
-    headers.push({ key: 'Content-Type', value: 'application/json', type: 'text' })
+    headers.push({ key: 'Content-Type', value: 'application/json', type: 'text' });
   }
-  return headers
+  return headers;
 }
 
 /**
@@ -105,43 +108,43 @@ function ensureJsonContentType(headerArr, hasJsonBody) {
  * @returns {object} Postman Item
  */
 function buildPostmanItem(config) {
-  const { url, name, method, body, header } = config
+  const { url, name, method, body, header } = config;
 
   // 1) 校验 URL
-  let urlObj
+  let urlObj;
   try {
-    urlObj = new URL(url)
+    urlObj = new URL(url);
   } catch (e) {
-    console.warn(`[warn] 非法 URL，已跳过：${url}`)
-    return null
+    console.warn(`[warn] 非法 URL，已跳过：${url}`, e);
+    return null;
   }
 
   // 2) 深拷贝模板，避免引用污染
-  const item = deepClone(itemTpl)
+  const item = deepClone(itemTpl);
 
   // 3) 基本信息
-  item.name = name || url
-  item.request.method = String(method || 'GET').toUpperCase()
-  item.request.url.raw = url
+  item.name = name || url;
+  item.request.method = String(method || 'GET').toUpperCase();
+  item.request.url.raw = url;
 
   // 4) URL 拆解：protocol / host / port / path
-  item.request.url.protocol = urlObj.protocol.replace(':', '') // "http" / "https"
-  item.request.url.host = urlObj.hostname.split('.') // 例：["localhost"] / ["api","example","com"]
-  if (urlObj.port) item.request.url.port = urlObj.port
-  item.request.url.path = urlObj.pathname.split('/').filter(Boolean) // 过滤空串
+  item.request.url.protocol = urlObj.protocol.replace(':', ''); // "http" / "https"
+  item.request.url.host = urlObj.hostname.split('.'); // 例：["localhost"] / ["api","example","com"]
+  if (urlObj.port) item.request.url.port = urlObj.port;
+  item.request.url.path = urlObj.pathname.split('/').filter(Boolean); // 过滤空串
 
   // 5) URL 查询参数 -> Postman query 数组
   if (urlObj.searchParams.toString()) {
     item.request.url.query = Array.from(urlObj.searchParams.entries()).map(([key, value]) => ({
       key,
-      value
-    }))
+      value,
+    }));
   }
 
   // 6) Headers
   // - 如果存在 JSON body，会自动补全 Content-Type
-  const hasJsonBody = methodAllowsBody(item.request.method) && body && typeof body === 'object'
-  item.request.header = ensureJsonContentType(header, hasJsonBody)
+  const hasJsonBody = methodAllowsBody(item.request.method) && body && typeof body === 'object';
+  item.request.header = ensureJsonContentType(header, hasJsonBody);
 
   // 7) Body
   // - GET/HEAD 自动忽略 body
@@ -151,50 +154,50 @@ function buildPostmanItem(config) {
       item.request.body = {
         mode: 'raw',
         raw: JSON.stringify(body, null, 2),
-        options: { raw: { language: 'json' } }
-      }
+        options: { raw: { language: 'json' } },
+      };
     } else if (typeof body === 'string') {
       // 如果用户已经自行给了序列化字符串，也支持
       item.request.body = {
         mode: 'raw',
         raw: body,
-        options: { raw: { language: 'json' } }
-      }
+        options: { raw: { language: 'json' } },
+      };
     } else {
       // 其他类型（number/boolean 等）强制转字符串
       item.request.body = {
         mode: 'raw',
         raw: String(body),
-        options: { raw: { language: 'text' } }
-      }
+        options: { raw: { language: 'text' } },
+      };
     }
   } else {
     // 明确不使用 body
-    delete item.request.body
+    delete item.request.body;
   }
 
-  return item
+  return item;
 }
 
 /**
  * 主流程：转换 appList -> Postman Collection
  */
 function main() {
-  const items = []
+  const items = [];
 
   for (const cfg of appList) {
-    const postmanItem = buildPostmanItem(cfg)
-    if (postmanItem) items.push(postmanItem)
+    const postmanItem = buildPostmanItem(cfg);
+    if (postmanItem) items.push(postmanItem);
   }
 
   const collection = {
     info: collectionInfo,
-    item: items
-  }
+    item: items,
+  };
 
-  const outFile = './postman_collection.json'
-  fs.writeFileSync(outFile, JSON.stringify(collection, null, 2), 'utf-8')
-  console.log(`[ok] 已生成 Postman Collection：${outFile}`)
+  const outFile = './postman_collection.json';
+  fs.writeFileSync(outFile, JSON.stringify(collection, null, 2), 'utf-8');
+  console.log(`[ok] 已生成 Postman Collection：${outFile}`);
 }
 
-main()
+main();

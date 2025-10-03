@@ -1,71 +1,71 @@
-const fs = require("fs");
-const path = require("path");
-const ExcelJS = require("exceljs");
+const fs = require('fs');
+const path = require('path');
+const ExcelJS = require('exceljs');
 
 // 自动识别数据库类型
 function detectDatabaseType(sqlContent) {
   if (/ENGINE\s*=\s*InnoDB|AUTO_INCREMENT|DELIMITER/i.test(sqlContent)) {
-    return "MySQL";
+    return 'MySQL';
   } else if (/IDENTITY|GO|NVARCHAR/i.test(sqlContent)) {
-    return "SQL Server";
+    return 'SQL Server';
   } else if (/BEGIN|END|VARCHAR2|PL\/SQL/i.test(sqlContent)) {
-    return "Oracle";
+    return 'Oracle';
   } else if (/SERIAL|BIGSERIAL|RETURNING/i.test(sqlContent)) {
-    return "PostgreSQL";
+    return 'PostgreSQL';
   }
-  return "Unknown";
+  return 'Unknown';
 }
 
 // 分析 SQL 文件的作用和涉及的物理表
 function analyzeSQLFile(filePath) {
-  const sqlContent = fs.readFileSync(filePath, "utf-8");
+  const sqlContent = fs.readFileSync(filePath, 'utf-8');
   const dbType = detectDatabaseType(sqlContent);
-  let fileType = "";
+  let fileType = '';
   let tables = [];
 
   switch (dbType) {
-    case "MySQL":
+    case 'MySQL':
       if (/create\s+procedure/i.test(sqlContent)) {
-        fileType = "存储过程";
+        fileType = '存储过程';
       } else if (/create\s+function/i.test(sqlContent)) {
-        fileType = "函数";
+        fileType = '函数';
       } else if (/create\s+table/i.test(sqlContent)) {
-        fileType = "表结构";
+        fileType = '表结构';
       }
       break;
 
-    case "SQL Server":
+    case 'SQL Server':
       if (/create\s+procedure/i.test(sqlContent)) {
-        fileType = "存储过程";
+        fileType = '存储过程';
       } else if (/create\s+function/i.test(sqlContent)) {
-        fileType = "函数";
+        fileType = '函数';
       } else if (/create\s+table/i.test(sqlContent)) {
-        fileType = "表结构";
+        fileType = '表结构';
       }
       break;
 
-    case "Oracle":
+    case 'Oracle':
       if (/procedure\s|CREATE\s+OR\s+REPLACE\s+PROCEDURE/i.test(sqlContent)) {
-        fileType = "存储过程";
+        fileType = '存储过程';
       } else if (/CREATE\s+OR\s+REPLACE\s+FUNCTION/i.test(sqlContent)) {
-        fileType = "函数";
+        fileType = '函数';
       } else if (/create\s+table/i.test(sqlContent)) {
-        fileType = "表结构";
+        fileType = '表结构';
       }
       break;
 
-    case "PostgreSQL":
+    case 'PostgreSQL':
       if (/create\s+procedure/i.test(sqlContent)) {
-        fileType = "存储过程";
+        fileType = '存储过程';
       } else if (/create\s+function/i.test(sqlContent)) {
-        fileType = "函数";
+        fileType = '函数';
       } else if (/create\s+table/i.test(sqlContent)) {
-        fileType = "表结构";
+        fileType = '表结构';
       }
       break;
 
     default:
-      fileType = "未知";
+      fileType = '未知';
   }
 
   // 提取表名
@@ -81,7 +81,7 @@ function analyzeSQLFile(filePath) {
 
   return {
     dbType: dbType,
-    fileType: fileType || "未知",
+    fileType: fileType || '未知',
     tables: [...new Set(tables)], // 去重
   };
 }
@@ -89,15 +89,15 @@ function analyzeSQLFile(filePath) {
 // 导出 Excel
 async function exportToExcel(data, outputPath) {
   const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet("SQL分析结果");
+  const worksheet = workbook.addWorksheet('SQL分析结果');
 
   // 添加列
   worksheet.columns = [
-    { header: "文件路径", key: "filePath", width: 40 },
-    { header: "文件名", key: "fileName", width: 20 },
-    { header: "数据库类型", key: "dbType", width: 15 },
-    { header: "文件作用", key: "fileRole", width: 20 },
-    { header: "涉及的物理表", key: "tables", width: 40 },
+    { header: '文件路径', key: 'filePath', width: 40 },
+    { header: '文件名', key: 'fileName', width: 20 },
+    { header: '数据库类型', key: 'dbType', width: 15 },
+    { header: '文件作用', key: 'fileRole', width: 20 },
+    { header: '涉及的物理表', key: 'tables', width: 40 },
   ];
 
   // 添加数据
@@ -107,7 +107,7 @@ async function exportToExcel(data, outputPath) {
       fileName: item.fileName,
       dbType: item.dbType,
       fileRole: item.fileRole,
-      tables: item.tables.join(", "),
+      tables: item.tables.join(', '),
     });
   });
 
@@ -119,7 +119,7 @@ async function exportToExcel(data, outputPath) {
 // 主函数
 async function main(dirPath, outputPath) {
   const allFiles = getAllFiles(dirPath);
-  const sqlFiles = allFiles.filter((file) => path.extname(file) === ".sql");
+  const sqlFiles = allFiles.filter((file) => path.extname(file) === '.sql');
 
   const results = sqlFiles.map((filePath) => {
     const { dbType, fileType, tables } = analyzeSQLFile(filePath);
@@ -136,7 +136,7 @@ async function main(dirPath, outputPath) {
 }
 
 // 执行主程序
-const directoryPath = "./sql_directory"; // 指定SQL文件夹路径
-const excelOutputPath = "./sql_analysis.xlsx"; // 导出Excel文件路径
+const directoryPath = './sql_directory'; // 指定SQL文件夹路径
+const excelOutputPath = './sql_analysis.xlsx'; // 导出Excel文件路径
 
 main(directoryPath, excelOutputPath);

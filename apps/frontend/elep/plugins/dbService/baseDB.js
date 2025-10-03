@@ -1,28 +1,28 @@
 class BaseDB {
   constructor(config) {
-    this.config = config
+    this.config = config;
   }
 
   async connect() {
-    throw new Error('connect not implemented')
+    throw new Error('connect not implemented');
   }
   async getSchemas() {
-    throw new Error('getSchemas not implemented')
+    throw new Error('getSchemas not implemented');
   }
   async getTables(schema) {
-    throw new Error('getTables not implemented')
+    throw new Error('getTables not implemented');
   }
   async getTableStruct(schema, table) {
-    throw new Error('getTableStruct not implemented')
+    throw new Error('getTableStruct not implemented');
   }
   async getProcedures(schema) {
-    throw new Error('getProcedures not implemented')
+    throw new Error('getProcedures not implemented');
   }
   async getProcedureDetail(schema, procedure) {
-    throw new Error('getProcedureDetail not implemented')
+    throw new Error('getProcedureDetail not implemented');
   }
 
   async getDBQuery() {}
 }
 
-module.exports = BaseDB
+module.exports = BaseDB;

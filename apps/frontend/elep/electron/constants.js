@@ -8,4 +8,4 @@ module.exports = {
       checkLogin: 'http://localhost:3000/userinfo',
     },
   },
-}
+};

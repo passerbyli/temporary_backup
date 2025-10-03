@@ -1,5 +1,5 @@
-const BaseDB = require('./baseDB')
-const mysql = require('mysql2/promise')
+const BaseDB = require('./baseDB');
+const mysql = require('mysql2/promise');
 
 class MySQLDB extends BaseDB {
   async connect() {
@@ -12,26 +12,26 @@ class MySQLDB extends BaseDB {
       timezone: this.config.timezone || '+08:00',
       waitForConnections: true,
       connectionLimit: 10,
-    })
+    });
   }
 
   async getSchemas() {
-    const [rows] = await this.client.query('SHOW DATABASES')
-    return rows.map((r) => r.Database)
+    const [rows] = await this.client.query('SHOW DATABASES');
+    return rows.map((r) => r.Database);
   }
 
   async getTables(schema) {
-    const [rows] = await this.client.query(`SHOW TABLES FROM \`${schema}\``)
-    return rows.map((row) => Object.values(row)[0])
+    const [rows] = await this.client.query(`SHOW TABLES FROM \`${schema}\``);
+    return rows.map((row) => Object.values(row)[0]);
   }
 
   async getTableStruct(schema, table) {
-    const [rows] = await this.client.query(`SHOW FULL COLUMNS FROM \`${schema}\`.\`${table}\``)
-    return rows
+    const [rows] = await this.client.query(`SHOW FULL COLUMNS FROM \`${schema}\`.\`${table}\``);
+    return rows;
   }
 
   async getProcedures(schema) {
-    if (!schema) throw new Error('schema is required')
+    if (!schema) throw new Error('schema is required');
     const [rows] = await this.client.query(
       `
     SELECT ROUTINE_NAME, ROUTINE_TYPE
@@ -39,21 +39,21 @@ class MySQLDB extends BaseDB {
     WHERE ROUTINE_SCHEMA = ?
   `,
       [schema],
-    )
-    return rows
+    );
+    return rows;
   }
 
   async getProcedureDetail(schema, procedureName) {
-    if (!schema || !procedureName) throw new Error('schema & procedureName are required')
+    if (!schema || !procedureName) throw new Error('schema & procedureName are required');
     const [rows] = await this.client.query(`
     SHOW CREATE PROCEDURE \`${schema}\`.\`${procedureName}\`
-  `)
-    return rows[0]
+  `);
+    return rows[0];
   }
 
   // 获取 存储过程/函数 的入参、出参
   async getProcedureParams(schema, procedureName) {
-    if (!schema || !procedureName) throw new Error('schema & procedureName are required')
+    if (!schema || !procedureName) throw new Error('schema & procedureName are required');
     const [rows] = await this.client.query(
       `
     SELECT 
@@ -64,9 +64,9 @@ class MySQLDB extends BaseDB {
     ORDER BY ORDINAL_POSITION
   `,
       [schema, procedureName],
-    )
-    return rows
+    );
+    return rows;
   }
 }
 
-module.exports = MySQLDB
+module.exports = MySQLDB;

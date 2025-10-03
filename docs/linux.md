@@ -24,12 +24,15 @@ cat /etc/os-release
 如果是 ID=debian / ubuntu，那才是 apt。
 
 对于RHEL/CentOS:
+
 1. 使用操作系统的包管理器
+
 ```
 yum update ca-certificates
 ```
 
 2. 手动更新证书
+
 ```
 sudo update-ca-trust
 ```

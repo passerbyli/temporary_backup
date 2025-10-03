@@ -69,4 +69,5 @@ module.exports = {
   query
 }
 ```
+
 优化升级代码，新增queryByPage(dbName, sql, params,{ page = 1, pageSize = 20 } = {})函数，避免直接引入const config = require('./config.json')，里面包含electron。

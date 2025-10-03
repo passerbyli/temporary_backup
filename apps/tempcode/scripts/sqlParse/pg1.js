@@ -1,4 +1,4 @@
-const pgParser = require("pg-query-parser");
+const pgParser = require('pg-query-parser');
 
 const sql = `
   CREATE TABLE users (

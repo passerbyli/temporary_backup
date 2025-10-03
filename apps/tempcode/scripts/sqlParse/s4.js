@@ -1,4 +1,4 @@
-const { parse } = require("pgsql-ast-parser");
+const { parse } = require('pgsql-ast-parser');
 
 // 示例 SQL 查询：包含物理表和临时表（通过 WITH 子句）
 const sql = `
@@ -25,7 +25,7 @@ const extractTables = (ast) => {
   if (ast.with) {
     ast.with.forEach((cte) => {
       if (cte.name) {
-        tables.push({ table: cte.name, type: "temporary" });
+        tables.push({ table: cte.name, type: 'temporary' });
       }
     });
   }
@@ -35,7 +35,7 @@ const extractTables = (ast) => {
     if (node && node.from) {
       node.from.forEach((tableNode) => {
         if (tableNode.relation) {
-          tables.push({ table: tableNode.relation, type: "physical" });
+          tables.push({ table: tableNode.relation, type: 'physical' });
         }
       });
     }
@@ -53,4 +53,4 @@ const extractTables = (ast) => {
 const tables = extractTables(ast);
 
 // 打印表信息
-console.log("Extracted Tables:", tables);
+console.log('Extracted Tables:', tables);

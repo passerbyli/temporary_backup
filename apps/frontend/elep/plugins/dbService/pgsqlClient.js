@@ -1,5 +1,5 @@
-const BaseDB = require('./baseDB')
-const { Client } = require('pg')
+const BaseDB = require('./baseDB');
+const { Client } = require('pg');
 
 class PgSQLDB extends BaseDB {
   async connect() {
@@ -9,8 +9,8 @@ class PgSQLDB extends BaseDB {
       password: this.config.password,
       database: this.config.database, // 可选，查询所有库时可不传
       port: this.config.port || 5432,
-    })
-    await this.client.connect()
+    });
+    await this.client.connect();
   }
 
   // 获取所有 schema
@@ -20,8 +20,8 @@ class PgSQLDB extends BaseDB {
       FROM information_schema.schemata
       WHERE schema_name NOT IN ('pg_catalog', 'information_schema')
       ORDER BY schema_name
-    `)
-    return res.rows.map((r) => r.schema_name)
+    `);
+    return res.rows.map((r) => r.schema_name);
   }
 
   // 获取某个 schema 下的所有表
@@ -34,8 +34,8 @@ class PgSQLDB extends BaseDB {
       ORDER BY table_name
     `,
       [schema],
-    )
-    return res.rows.map((r) => r.table_name)
+    );
+    return res.rows.map((r) => r.table_name);
   }
 
   // 获取表结构
@@ -48,8 +48,8 @@ class PgSQLDB extends BaseDB {
       ORDER BY ordinal_position
     `,
       [schema, table],
-    )
-    return res.rows
+    );
+    return res.rows;
   }
 
   // 获取存储过程或函数列表
@@ -62,8 +62,8 @@ class PgSQLDB extends BaseDB {
       ORDER BY routine_name
     `,
       [schema],
-    )
-    return res.rows
+    );
+    return res.rows;
   }
 
   // 获取存储过程或函数定义
@@ -77,8 +77,8 @@ class PgSQLDB extends BaseDB {
       LIMIT 1
     `,
       [schema, routineName],
-    )
-    return res.rows.length ? res.rows[0].create_sql : ''
+    );
+    return res.rows.length ? res.rows[0].create_sql : '';
   }
 
   /**
@@ -108,25 +108,25 @@ WHERE n.nspname = $1
 AND p.proname = $2;
     `,
       [schema, routineName],
-    )
-    return res.rows
+    );
+    return res.rows;
   }
 
   async getDBQuery(sql) {
-    console.log('924924203')
+    console.log('924924203');
     const res = await this.client.query(
       `${sql}
     `,
       [],
-    )
-    return res.rows
+    );
+    return res.rows;
   }
 
   async close() {
     if (this.client) {
-      await this.client.end()
+      await this.client.end();
     }
   }
 }
 
-module.exports = PgSQLDB
+module.exports = PgSQLDB;

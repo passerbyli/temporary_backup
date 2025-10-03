@@ -11,8 +11,8 @@ window.fetch = async function (input, init) {
   }
 
   // 判断是否包含 /v1/，替换为 /v2/
-  if (typeof url === "string" && url.includes("/v1/")) {
-    url = url.replace("/v1/", "/v2/");
+  if (typeof url === 'string' && url.includes('/v1/')) {
+    url = url.replace('/v1/', '/v2/');
   }
 
   // 如果原始传入的是 Request 对象，需要克隆一个新的
@@ -26,17 +26,10 @@ window.fetch = async function (input, init) {
   return originalFetch(input, init);
 };
 
-
-
-
-
 (function () {
-  const original = Object.getOwnPropertyDescriptor(
-    window.Location.prototype,
-    "href"
-  );
+  const original = Object.getOwnPropertyDescriptor(window.Location.prototype, 'href');
 
-  Object.defineProperty(window.location, "href", {
+  Object.defineProperty(window.location, 'href', {
     configurable: true,
     enumerable: true,
     get: function () {
@@ -44,9 +37,9 @@ window.fetch = async function (input, init) {
     },
     set: function (url) {
       // 判断是否需要替换
-      if (typeof url === "string" && url.includes("a.example.com")) {
-        url = url.replace("a.example.com", "b.example.com");
-        console.log("[跳转拦截] 替换跳转地址:", url);
+      if (typeof url === 'string' && url.includes('a.example.com')) {
+        url = url.replace('a.example.com', 'b.example.com');
+        console.log('[跳转拦截] 替换跳转地址:', url);
       }
       return original.set.call(this, url);
     },

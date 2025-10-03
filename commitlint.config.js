@@ -106,7 +106,7 @@ export default {
     ],
     scopes: [{ name: 'components' }, { name: 'utils' }, { name: 'backend' }, { name: 'frontend' }, { name: 'root' }],
     allowCustomScopes: true,
-    skipQuestions: ['body', 'footer', 'footerPrefix', 'breaking'], // 跳过 详细描述 和 底部详细
+    skipQuestions: ['breaking'],
     messages: {
       type: '选择 Commit 类型:',
       scope: '选择 Commit Scope:',

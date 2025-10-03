@@ -1,14 +1,14 @@
-const fs = require("fs");
-const path = require("path");
-const xlsx = require("xlsx");
-const mysql = require("mysql2/promise"); // 或改为 pg
+const fs = require('fs');
+const path = require('path');
+const xlsx = require('xlsx');
+const mysql = require('mysql2/promise'); // 或改为 pg
 
 // === 数据库配置（MySQL 示例） ===
 const dbConfig = {
-  host: "localhost",
-  user: "your_user",
-  password: "your_password",
-  database: "your_db",
+  host: 'localhost',
+  user: 'your_user',
+  password: 'your_password',
+  database: 'your_db',
 };
 
 // === 处理 Excel 文件 ===
@@ -26,21 +26,19 @@ function readExcel(filePath) {
 // === 插入数据库（MySQL） ===
 async function insertToMySQL(data) {
   const connection = await mysql.createConnection(dbConfig);
-  const table = "your_table"; // 替换为你自己的表名
+  const table = 'your_table'; // 替换为你自己的表名
 
   try {
     for (const row of data) {
       const keys = Object.keys(row);
       const values = Object.values(row);
-      const placeholders = keys.map(() => "?").join(", ");
-      const sql = `INSERT INTO \`${table}\` (${keys
-        .map((k) => `\`${k}\``)
-        .join(", ")}) VALUES (${placeholders})`;
+      const placeholders = keys.map(() => '?').join(', ');
+      const sql = `INSERT INTO \`${table}\` (${keys.map((k) => `\`${k}\``).join(', ')}) VALUES (${placeholders})`;
       await connection.execute(sql, values);
     }
-    console.log("✅ 插入完成");
+    console.log('✅ 插入完成');
   } catch (err) {
-    console.error("❌ 插入失败:", err);
+    console.error('❌ 插入失败:', err);
   } finally {
     await connection.end();
   }
@@ -50,9 +48,7 @@ async function insertToMySQL(data) {
 async function main() {
   const args = process.argv.slice(2);
   if (args.length < 1) {
-    console.error(
-      "❌ 请传入 Excel 文件路径，例如：node main.js D://example.xlsx"
-    );
+    console.error('❌ 请传入 Excel 文件路径，例如：node main.js D://example.xlsx');
     process.exit(1);
   }
 
@@ -62,13 +58,13 @@ async function main() {
   try {
     const data = readExcel(filePath);
     if (data.length === 0) {
-      console.warn("⚠️ Excel 内容为空");
+      console.warn('⚠️ Excel 内容为空');
       return;
     }
 
     await insertToMySQL(data);
   } catch (err) {
-    console.error("❌ 错误:", err.message);
+    console.error('❌ 错误:', err.message);
   }
 }
 

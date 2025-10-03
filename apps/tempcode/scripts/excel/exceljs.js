@@ -1,4 +1,4 @@
-const ExcelJS = require("exceljs");
+const ExcelJS = require('exceljs');
 
 async function readHeaderInfo(filePath) {
   const workbook = new ExcelJS.Workbook();
@@ -15,19 +15,17 @@ async function readHeaderInfo(filePath) {
     headers.push({
       name: cell.value, // 表头名称
       index: colNumber, // 列下标（从 1 开始）
-      width: worksheet.getColumn(colNumber).width || "default", // 列宽
+      width: worksheet.getColumn(colNumber).width || 'default', // 列宽
     });
   });
 
-  console.log("表头信息:", headers);
+  console.log('表头信息:', headers);
   return headers;
 }
 
 (async () => {
-  await readHeaderInfo("./apis.xlsx");
+  await readHeaderInfo('./apis.xlsx');
 })();
-
-
 
 // validate_apis.js
 const path = require('path');
@@ -102,7 +100,7 @@ function redFill() {
   return {
     type: 'pattern',
     pattern: 'solid',
-    fgColor: { argb: 'FFFFC7CE' } // 浅红
+    fgColor: { argb: 'FFFFC7CE' }, // 浅红
   };
 }
 
@@ -116,7 +114,7 @@ async function fireRequest({ url, method, paramsObj, cookie, headers, timeoutMs 
     method: (method || 'GET').toUpperCase(),
     headers: { ...headers },
     timeout: timeoutMs,
-    validateStatus: () => true // 我们自己判断
+    validateStatus: () => true, // 我们自己判断
   };
 
   if (cookie) {
@@ -147,9 +145,11 @@ async function fireRequest({ url, method, paramsObj, cookie, headers, timeoutMs 
     return { ok: true, status, bodySnippet, headers: resHeaders };
   } catch (err) {
     const status = err.response?.status ?? 0;
-    const bodySnippet = err.response ? (typeof err.response.data === 'string'
-      ? err.response.data.slice(0, 500)
-      : JSON.stringify(err.response.data || '').slice(0, 500)) : String(err.message).slice(0, 500);
+    const bodySnippet = err.response
+      ? typeof err.response.data === 'string'
+        ? err.response.data.slice(0, 500)
+        : JSON.stringify(err.response.data || '').slice(0, 500)
+      : String(err.message).slice(0, 500);
     return { ok: false, status, bodySnippet };
   }
 }
@@ -182,11 +182,12 @@ async function main() {
     roleA: name2col['角色 A'],
     roleB: name2col['角色 B'],
     roleC: name2col['角色 C'],
-    params: name2col['入参']
+    params: name2col['入参'],
   };
 
-  const missing = Object.entries(COLS)
-    .filter(([k, v]) => v == null && !['roleA','roleB','roleC','name'].includes(k)); // name/角色列可选？
+  const missing = Object.entries(COLS).filter(
+    ([k, v]) => v == null && !['roleA', 'roleB', 'roleC', 'name'].includes(k),
+  ); // name/角色列可选？
   if (missing.length) {
     throw new Error(`缺少以下必要表头：${missing.map(([k]) => k).join(', ')}`);
   }
@@ -196,7 +197,7 @@ async function main() {
   const outCols = {
     '角色 A': { status: lastCol + 1, pass: lastCol + 2, resp: lastCol + 3 },
     '角色 B': { status: lastCol + 4, pass: lastCol + 5, resp: lastCol + 6 },
-    '角色 C': { status: lastCol + 7, pass: lastCol + 8, resp: lastCol + 9 }
+    '角色 C': { status: lastCol + 7, pass: lastCol + 8, resp: lastCol + 9 },
   };
 
   ws.getRow(1).getCell(outCols['角色 A'].status).value = '角色A-Status';
@@ -247,7 +248,7 @@ async function main() {
         paramsObj,
         cookie,
         headers: cfg.headers || {},
-        timeoutMs: cfg.timeoutMs || 10000
+        timeoutMs: cfg.timeoutMs || 10000,
       });
 
       const pass = decidePass(hasY, status, cfg);
@@ -282,7 +283,7 @@ function roleKey(roleName) {
   return '';
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error('❌ 发生错误：', err);
   process.exit(1);
 });

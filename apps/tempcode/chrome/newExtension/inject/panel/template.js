@@ -1,4 +1,4 @@
-;(function () {
+(function () {
   window.graphPanelTemplate = {
     createPanelTemplate() {
       return `
@@ -13,7 +13,7 @@
             <div class="tab-content" id="tab-info" style="display:none">节点信息</div>
             <div class="tab-content" id="tab-log" style="display:none">日志内容</div>
           </div>
-        `
+        `;
     },
-  }
-})()
+  };
+})();

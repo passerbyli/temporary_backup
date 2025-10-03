@@ -1,10 +1,10 @@
-const puppeteer = require("puppeteer");
-const axios = require("axios");
-const cheerio = require("cheerio");
-const fs = require("fs-extra");
-const path = require("path");
-const FormData = require("form-data");
-const config = require("./config.json");
+const puppeteer = require('puppeteer');
+const axios = require('axios');
+const cheerio = require('cheerio');
+const fs = require('fs-extra');
+const path = require('path');
+const FormData = require('form-data');
+const config = require('./config.json');
 
 // 自动打开浏览器，并要求用户手动登录
 async function openBrowserForManualLogin(site, cookiesFilePath) {
@@ -14,10 +14,10 @@ async function openBrowserForManualLogin(site, cookiesFilePath) {
   // 导航到登录页面
   await page.goto(site.loginUrl);
 
-  console.log("请在浏览器中完成登录操作...");
+  console.log('请在浏览器中完成登录操作...');
   // 等待用户登录完成后手动关闭浏览器
   await new Promise((resolve) => {
-    page.on("framenavigated", () => {
+    page.on('framenavigated', () => {
       resolve(); // 登录完成时解决Promise
     });
   });
@@ -27,7 +27,7 @@ async function openBrowserForManualLogin(site, cookiesFilePath) {
   await fs.writeJSON(cookiesFilePath, cookies);
 
   await browser.close();
-  console.log("登录完成，已保存cookies。");
+  console.log('登录完成，已保存cookies。');
   return cookies;
 }
 
@@ -38,9 +38,7 @@ function loadCookies(filePath) {
 
 // 使用cookies进行请求
 async function fetchArticles(cookies) {
-  const cookieHeader = cookies
-    .map((cookie) => `${cookie.name}=${cookie.value}`)
-    .join("; ");
+  const cookieHeader = cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join('; ');
   const response = await axios.get(config.siteA.articlesUrl, {
     headers: { Cookie: cookieHeader },
   });
@@ -49,12 +47,10 @@ async function fetchArticles(cookies) {
 
 // 下载图片
 async function downloadImage(imageUrl, cookies) {
-  const cookieHeader = cookies
-    .map((cookie) => `${cookie.name}=${cookie.value}`)
-    .join("; ");
+  const cookieHeader = cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join('; ');
 
   const response = await axios.get(imageUrl, {
-    responseType: "arraybuffer",
+    responseType: 'arraybuffer',
     headers: { Cookie: cookieHeader },
   });
   return response.data;
@@ -62,12 +58,10 @@ async function downloadImage(imageUrl, cookies) {
 
 // 上传图片到站点B
 async function uploadImage(imageData, cookies) {
-  const cookieHeader = cookies
-    .map((cookie) => `${cookie.name}=${cookie.value}`)
-    .join("; ");
+  const cookieHeader = cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join('; ');
 
   const form = new FormData();
-  form.append("file", imageData, { filename: "image.jpg" });
+  form.append('file', imageData, { filename: 'image.jpg' });
 
   const response = await axios.post(config.siteB.uploadUrl, form, {
     headers: {
@@ -83,9 +77,9 @@ async function processArticle(article, cookies) {
   const $ = cheerio.load(article.htmlContent);
   const imageUrls = [];
 
-  $("img").each((index, element) => {
+  $('img').each((index, element) => {
     const img = $(element);
-    const src = img.attr("src");
+    const src = img.attr('src');
     if (src) {
       imageUrls.push(src);
     }
@@ -94,7 +88,7 @@ async function processArticle(article, cookies) {
   for (const imageUrl of imageUrls) {
     const imageData = await downloadImage(imageUrl, cookies);
     const newImageUrl = await uploadImage(imageData, cookies);
-    $('img[src="' + imageUrl + '"]').attr("src", newImageUrl);
+    $('img[src="' + imageUrl + '"]').attr('src', newImageUrl);
   }
 
   return {
@@ -106,8 +100,8 @@ async function processArticle(article, cookies) {
 // 主程序
 (async () => {
   // 第一次运行时，要求用户登录站点A并保存cookies
-  const cookiesPathA = path.join(__dirname, "cookies_a.json");
-  const cookiesPathB = path.join(__dirname, "cookies_b.json");
+  const cookiesPathA = path.join(__dirname, 'cookies_a.json');
+  const cookiesPathB = path.join(__dirname, 'cookies_b.json');
 
   if (!fs.existsSync(cookiesPathA)) {
     await openBrowserForManualLogin(config.siteA, cookiesPathA);

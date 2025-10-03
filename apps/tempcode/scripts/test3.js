@@ -1,4 +1,4 @@
-const { Client } = require('pg') // openGauss 也兼容
+const { Client } = require('pg'); // openGauss 也兼容
 
 const sql = `
   EXPLAIN (FORMAT JSON)
@@ -8,41 +8,41 @@ const sql = `
   GROUP BY t1.name
   ORDER BY COUNT(*) DESC
   LIMIT 10;
-`
+`;
 
-const client = new Client({}) // openGauss 配置
-await client.connect()
-const res = await client.query(sql)
+const client = new Client({}); // openGauss 配置
+await client.connect();
+const res = await client.query(sql);
 
-const plan = res.rows[0]['QUERY PLAN'][0]['Plan']
+const plan = res.rows[0]['QUERY PLAN'][0]['Plan'];
 
 function collectOperators(planNode, result = []) {
-  if (!planNode) return result
-  result.push(planNode['Node Type'])
+  if (!planNode) return result;
+  result.push(planNode['Node Type']);
   if (planNode['Plans']) {
-    planNode['Plans'].forEach((sub) => collectOperators(sub, result))
+    planNode['Plans'].forEach((sub) => collectOperators(sub, result));
   }
-  return result
+  return result;
 }
 
-const operators = collectOperators(plan)
-const uniqueOps = [...new Set(operators)]
-console.log(`共使用了 ${operators.length} 个算子，${uniqueOps.length} 种类型：`, uniqueOps)
+const operators = collectOperators(plan);
+const uniqueOps = [...new Set(operators)];
+console.log(`共使用了 ${operators.length} 个算子，${uniqueOps.length} 种类型：`, uniqueOps);
 
 /**00000000000000000**/
 const parseValue = (val) => {
-  if (val === undefined || val === null) return null
+  if (val === undefined || val === null) return null;
 
   if (typeof val === 'string') {
-    val = val.trim()
+    val = val.trim();
     if (val.endsWith('%')) {
-      const num = parseFloat(val.slice(0, -1))
-      return isNaN(num) ? null : num / 100
+      const num = parseFloat(val.slice(0, -1));
+      return isNaN(num) ? null : num / 100;
     }
   }
-  const num = parseFloat(val)
-  return isNaN(num) ? null : num
-}
+  const num = parseFloat(val);
+  return isNaN(num) ? null : num;
+};
 
 /**
  * 通用排序函数，支持百分比、数字字符串、负数、undefined
@@ -53,18 +53,18 @@ const parseValue = (val) => {
 function sortByFields(arr, sortFields) {
   return arr.slice().sort((a, b) => {
     for (const { key, order = 'asc' } of sortFields) {
-      const valA = parseValue(a[key])
-      const valB = parseValue(b[key])
+      const valA = parseValue(a[key]);
+      const valB = parseValue(b[key]);
 
-      if (valA === null && valB !== null) return 1
-      if (valB === null && valA !== null) return -1
-      if (valA === null && valB === null) continue
+      if (valA === null && valB !== null) return 1;
+      if (valB === null && valA !== null) return -1;
+      if (valA === null && valB === null) continue;
 
-      if (valA < valB) return order === 'asc' ? -1 : 1
-      if (valA > valB) return order === 'asc' ? 1 : -1
+      if (valA < valB) return order === 'asc' ? -1 : 1;
+      if (valA > valB) return order === 'asc' ? 1 : -1;
     }
-    return 0
-  })
+    return 0;
+  });
 }
 
 /**
@@ -76,21 +76,21 @@ function sortByFields(arr, sortFields) {
  */
 function sortByField2(arr, field, order = 'asc') {
   return arr.slice().sort((a, b) => {
-    const valA = parseValue(a[field])
-    const valB = parseValue(b[field])
+    const valA = parseValue(a[field]);
+    const valB = parseValue(b[field]);
 
     // undefined/null 排在最后
-    if (valA === null && valB !== null) return 1
-    if (valB === null && valA !== null) return -1
-    if (valA === null && valB === null) return 0
+    if (valA === null && valB !== null) return 1;
+    if (valB === null && valA !== null) return -1;
+    if (valA === null && valB === null) return 0;
 
-    if (valA < valB) return order === 'asc' ? -1 : 1
-    if (valA > valB) return order === 'asc' ? 1 : -1
-    return 0
-  })
+    if (valA < valB) return order === 'asc' ? -1 : 1;
+    if (valA > valB) return order === 'asc' ? 1 : -1;
+    return 0;
+  });
 }
 
-const _ = require('lodash')
+const _ = require('lodash');
 
 /**
  * 字段通用排序，支持百分比/负数/undefined
@@ -104,12 +104,12 @@ function sortByField3(arr, field, order = 'asc') {
     arr,
     [
       (item) => {
-        const parsed = parseValue(item[field])
-        return parsed === null ? Infinity : parsed // undefined/null 放最后
+        const parsed = parseValue(item[field]);
+        return parsed === null ? Infinity : parsed; // undefined/null 放最后
       },
     ],
-    [order]
-  )
+    [order],
+  );
 }
 
 /**
@@ -120,43 +120,37 @@ function sortByField3(arr, field, order = 'asc') {
  */
 function sortByFields4(arr, fields) {
   const iteratees = fields.map(({ field }) => (item) => {
-    const parsed = parseValue(item[field])
-    return parsed === null ? Infinity : parsed
-  })
+    const parsed = parseValue(item[field]);
+    return parsed === null ? Infinity : parsed;
+  });
 
-  const orders = fields.map(({ order = 'asc' }) => order)
+  const orders = fields.map(({ order = 'asc' }) => order);
 
-  return _.orderBy(arr, iteratees, orders)
+  return _.orderBy(arr, iteratees, orders);
 }
-
 
 // https://github.com/TriliumNext/Trilium/releases
 
-
-
-
-
-
 // configService.js
-const path = require('path')
-const fs = require('fs')
-const { app } = require('electron')
+const path = require('path');
+const fs = require('fs');
+const { app } = require('electron');
 
-const configPath = path.join(app.getPath('userData'), 'config.json')
-let configCache = null
+const configPath = path.join(app.getPath('userData'), 'config.json');
+let configCache = null;
 
 function ensureConfig() {
   if (!fs.existsSync(configPath)) {
-    const defaultPath = path.join(__dirname, '..', 'config', 'config.json')
-    fs.copyFileSync(defaultPath, configPath)
+    const defaultPath = path.join(__dirname, '..', 'config', 'config.json');
+    fs.copyFileSync(defaultPath, configPath);
   }
 }
 
 function readConfig() {
-  if (configCache) return configCache
-  const raw = fs.readFileSync(configPath, 'utf-8')
-  configCache = JSON.parse(raw)
-  return configCache
+  if (configCache) return configCache;
+  const raw = fs.readFileSync(configPath, 'utf-8');
+  configCache = JSON.parse(raw);
+  return configCache;
 }
 
-module.exports = { ensureConfig, readConfig }
+module.exports = { ensureConfig, readConfig };

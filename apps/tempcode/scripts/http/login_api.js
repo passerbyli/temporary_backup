@@ -1,15 +1,15 @@
-const https = require("https");
-const fs = require("fs");
-const path = require("path");
+const https = require('https');
+const fs = require('fs');
+const path = require('path');
 
-const cookieFilePath = path.resolve(__dirname, "cookies.txt");
+const cookieFilePath = path.resolve(__dirname, 'cookies.txt');
 
 // 登录信息
-const LOGIN_URL = "/api/login";
-const LOGIN_HOST = "example.com";
+const LOGIN_URL = '/api/login';
+const LOGIN_HOST = 'example.com';
 const LOGIN_DATA = JSON.stringify({
-  username: "your-username",
-  password: "your-password",
+  username: 'your-username',
+  password: 'your-password',
 });
 
 let cookies = {};
@@ -17,13 +17,13 @@ let cookies = {};
 // 从文件加载 cookies
 function loadCookiesFromFile() {
   if (fs.existsSync(cookieFilePath)) {
-    const cookieStr = fs.readFileSync(cookieFilePath, "utf-8");
-    cookies = cookieStr.split("; ").reduce((acc, curr) => {
-      const [name, value] = curr.split("=");
+    const cookieStr = fs.readFileSync(cookieFilePath, 'utf-8');
+    cookies = cookieStr.split('; ').reduce((acc, curr) => {
+      const [name, value] = curr.split('=');
       acc[name] = value;
       return acc;
     }, {});
-    console.log("Cookies loaded from file.");
+    console.log('Cookies loaded from file.');
   }
 }
 
@@ -31,16 +31,16 @@ function loadCookiesFromFile() {
 function saveCookiesToFile() {
   const cookieStr = Object.entries(cookies)
     .map(([name, value]) => `${name}=${value}`)
-    .join("; ");
+    .join('; ');
   fs.writeFileSync(cookieFilePath, cookieStr);
-  console.log("Cookies saved to file.");
+  console.log('Cookies saved to file.');
 }
 
 // 解析并存储 cookies
 function storeCookies(setCookieHeaders) {
   setCookieHeaders.forEach((header) => {
-    const [cookie] = header.split(";");
-    const [name, value] = cookie.split("=");
+    const [cookie] = header.split(';');
+    const [name, value] = cookie.split('=');
     cookies[name] = value;
   });
   saveCookiesToFile();
@@ -49,23 +49,23 @@ function storeCookies(setCookieHeaders) {
 // 发起HTTPS请求
 function makeRequest(options, postData, callback) {
   const req = https.request(options, (res) => {
-    let data = "";
+    let data = '';
 
     // 存储 cookies
-    if (res.headers["set-cookie"]) {
-      storeCookies(res.headers["set-cookie"]);
+    if (res.headers['set-cookie']) {
+      storeCookies(res.headers['set-cookie']);
     }
 
-    res.on("data", (chunk) => {
+    res.on('data', (chunk) => {
       data += chunk;
     });
 
-    res.on("end", () => {
+    res.on('end', () => {
       callback(null, data);
     });
   });
 
-  req.on("error", (e) => {
+  req.on('error', (e) => {
     callback(e, null);
   });
 
@@ -81,18 +81,18 @@ function loginAndGetCookies(callback) {
   const options = {
     hostname: LOGIN_HOST,
     path: LOGIN_URL,
-    method: "POST",
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
-      "Content-Length": LOGIN_DATA.length,
+      'Content-Type': 'application/json',
+      'Content-Length': LOGIN_DATA.length,
     },
   };
 
   makeRequest(options, LOGIN_DATA, (err, data) => {
     if (err) {
-      console.error("Login failed:", err);
+      console.error('Login failed:', err);
     } else {
-      console.log("Login successful.");
+      console.log('Login successful.');
       callback();
     }
   });
@@ -102,22 +102,22 @@ function loginAndGetCookies(callback) {
 function isCookieValid(callback) {
   const options = {
     hostname: LOGIN_HOST,
-    path: "/protected", // 替换为实际受保护资源路径
-    method: "GET",
+    path: '/protected', // 替换为实际受保护资源路径
+    method: 'GET',
     headers: {
       Cookie: Object.entries(cookies)
         .map(([name, value]) => `${name}=${value}`)
-        .join("; "),
+        .join('; '),
     },
   };
 
   makeRequest(options, null, (err, data) => {
     if (err) {
-      console.error("Error checking cookie validity:", err);
+      console.error('Error checking cookie validity:', err);
       callback(false);
     } else {
       // 根据实际响应内容判断 cookies 是否有效
-      if (data.includes("some-indicator-of-validity")) {
+      if (data.includes('some-indicator-of-validity')) {
         callback(true);
       } else {
         callback(false);
@@ -142,20 +142,20 @@ function fetchProtectedResource() {
   ensureAuthenticated(() => {
     const options = {
       hostname: LOGIN_HOST,
-      path: "/protected", // 替换为实际受保护资源路径
-      method: "GET",
+      path: '/protected', // 替换为实际受保护资源路径
+      method: 'GET',
       headers: {
         Cookie: Object.entries(cookies)
           .map(([name, value]) => `${name}=${value}`)
-          .join("; "),
+          .join('; '),
       },
     };
 
     makeRequest(options, null, (err, data) => {
       if (err) {
-        console.error("Error fetching protected resource:", err);
+        console.error('Error fetching protected resource:', err);
       } else {
-        console.log("Protected resource content:", data);
+        console.log('Protected resource content:', data);
       }
     });
   });

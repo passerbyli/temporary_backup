@@ -9,14 +9,14 @@
  *   node generate-swagger-3sheets.js --input ./swagger.json --output ./swagger-export.xlsx
  */
 
-const fs = require("fs");
-const path = require("path");
-const ExcelJS = require("exceljs");
+const fs = require('fs');
+const path = require('path');
+const ExcelJS = require('exceljs');
 
 /* ---------------- CLI ---------------- */
 const args = parseArgs(process.argv.slice(2));
-required(args, ["input", "output"]);
-const spec = JSON.parse(fs.readFileSync(path.resolve(args.input), "utf8"));
+required(args, ['input', 'output']);
+const spec = JSON.parse(fs.readFileSync(path.resolve(args.input), 'utf8'));
 const isV3 = !!spec.openapi;
 
 /* ---------------- Resolver ---------------- */
@@ -30,35 +30,24 @@ const respFieldRows = [];
 /* ---------------- Walk operations ---------------- */
 const paths = spec.paths || {};
 for (const [p, pathItem] of Object.entries(paths)) {
-  for (const m of [
-    "get",
-    "post",
-    "put",
-    "delete",
-    "patch",
-    "head",
-    "options",
-    "trace",
-  ]) {
+  for (const m of ['get', 'post', 'put', 'delete', 'patch', 'head', 'options', 'trace']) {
     const op = (pathItem || {})[m];
     if (!op) continue;
 
     // --- APIs sheet row ---
     apiRows.push({
-      Tag: (op.tags || []).join(","),
+      Tag: (op.tags || []).join(','),
       Method: m.toUpperCase(),
       Path: p,
-      Summary: op.summary || "",
-      OperationId: op.operationId || "",
-      Consumes: getConsumes(spec, op).join(","),
-      Produces: getProduces(spec, op).join(","),
-      Deprecated: op.deprecated ? "YES" : "NO",
+      Summary: op.summary || '',
+      OperationId: op.operationId || '',
+      Consumes: getConsumes(spec, op).join(','),
+      Produces: getProduces(spec, op).join(','),
+      Deprecated: op.deprecated ? 'YES' : 'NO',
     });
 
     // --- Parameters: path-level + op-level (v2/v3) ---
-    const pathParams = (pathItem.parameters || []).map((x) =>
-      resolveRef(resolver, x)
-    );
+    const pathParams = (pathItem.parameters || []).map((x) => resolveRef(resolver, x));
     const opParams = (op.parameters || []).map((x) => resolveRef(resolver, x));
     const allParams = [...pathParams, ...opParams];
 
@@ -69,12 +58,12 @@ for (const [p, pathItem] of Object.entries(paths)) {
           rows: paramFieldRows,
           schema: resolveRef(resolver, schema),
           origin: {
-            Kind: "Param",
-            Tag: (op.tags || []).join(","),
+            Kind: 'Param',
+            Tag: (op.tags || []).join(','),
             Method: m.toUpperCase(),
             Path: p,
-            ParamName: prm.name || "(param)",
-            In: prm.in || "",
+            ParamName: prm.name || '(param)',
+            In: prm.in || '',
           },
         });
       }
@@ -90,12 +79,12 @@ for (const [p, pathItem] of Object.entries(paths)) {
           rows: paramFieldRows,
           schema,
           origin: {
-            Kind: "Param",
-            Tag: (op.tags || []).join(","),
+            Kind: 'Param',
+            Tag: (op.tags || []).join(','),
             Method: m.toUpperCase(),
             Path: p,
-            ParamName: "(body)",
-            In: "body",
+            ParamName: '(body)',
+            In: 'body',
           },
         });
       }
@@ -118,8 +107,8 @@ for (const [p, pathItem] of Object.entries(paths)) {
           rows: respFieldRows,
           schema,
           origin: {
-            Kind: "Resp",
-            Tag: (op.tags || []).join(","),
+            Kind: 'Resp',
+            Tag: (op.tags || []).join(','),
             Method: m.toUpperCase(),
             Path: p,
             Status: code,
@@ -133,66 +122,66 @@ for (const [p, pathItem] of Object.entries(paths)) {
 /* ---------------- Write Excel ---------------- */
 (async () => {
   const wb = new ExcelJS.Workbook();
-  wb.creator = "swagger-3sheets";
+  wb.creator = 'swagger-3sheets';
   wb.created = new Date();
 
   addSheet(
     wb,
-    "APIs",
+    'APIs',
     [
-      { header: "Tag", key: "Tag", width: 24 },
-      { header: "Method", key: "Method", width: 10 },
-      { header: "Path", key: "Path", width: 60 },
-      { header: "Summary", key: "Summary", width: 50 },
-      { header: "OperationId", key: "OperationId", width: 30 },
-      { header: "Consumes", key: "Consumes", width: 30 },
-      { header: "Produces", key: "Produces", width: 30 },
-      { header: "Deprecated", key: "Deprecated", width: 10 },
+      { header: 'Tag', key: 'Tag', width: 24 },
+      { header: 'Method', key: 'Method', width: 10 },
+      { header: 'Path', key: 'Path', width: 60 },
+      { header: 'Summary', key: 'Summary', width: 50 },
+      { header: 'OperationId', key: 'OperationId', width: 30 },
+      { header: 'Consumes', key: 'Consumes', width: 30 },
+      { header: 'Produces', key: 'Produces', width: 30 },
+      { header: 'Deprecated', key: 'Deprecated', width: 10 },
     ],
-    apiRows
+    apiRows,
   );
 
   addSheet(
     wb,
-    "ParamFields",
+    'ParamFields',
     [
-      { header: "Tag", key: "Tag", width: 20 },
-      { header: "Method", key: "Method", width: 8 },
-      { header: "Path", key: "Path", width: 60 },
-      { header: "ParamName", key: "ParamName", width: 24 },
-      { header: "In", key: "In", width: 10 },
-      { header: "FieldPath", key: "FieldPath", width: 60 },
-      { header: "FieldName", key: "FieldName", width: 26 },
-      { header: "Type", key: "Type", width: 26 },
-      { header: "Required", key: "Required", width: 8 },
-      { header: "Enum", key: "Enum", width: 40 },
-      { header: "Example", key: "Example", width: 40 },
-      { header: "Description", key: "Description", width: 60 },
-      { header: "SourceModel", key: "SourceModel", width: 28 },
-      { header: "ArrayDepth", key: "ArrayDepth", width: 10 },
+      { header: 'Tag', key: 'Tag', width: 20 },
+      { header: 'Method', key: 'Method', width: 8 },
+      { header: 'Path', key: 'Path', width: 60 },
+      { header: 'ParamName', key: 'ParamName', width: 24 },
+      { header: 'In', key: 'In', width: 10 },
+      { header: 'FieldPath', key: 'FieldPath', width: 60 },
+      { header: 'FieldName', key: 'FieldName', width: 26 },
+      { header: 'Type', key: 'Type', width: 26 },
+      { header: 'Required', key: 'Required', width: 8 },
+      { header: 'Enum', key: 'Enum', width: 40 },
+      { header: 'Example', key: 'Example', width: 40 },
+      { header: 'Description', key: 'Description', width: 60 },
+      { header: 'SourceModel', key: 'SourceModel', width: 28 },
+      { header: 'ArrayDepth', key: 'ArrayDepth', width: 10 },
     ],
-    paramFieldRows
+    paramFieldRows,
   );
 
   addSheet(
     wb,
-    "ResponseFields",
+    'ResponseFields',
     [
-      { header: "Tag", key: "Tag", width: 20 },
-      { header: "Method", key: "Method", width: 8 },
-      { header: "Path", key: "Path", width: 60 },
-      { header: "Status", key: "Status", width: 8 },
-      { header: "FieldPath", key: "FieldPath", width: 60 },
-      { header: "FieldName", key: "FieldName", width: 26 },
-      { header: "Type", key: "Type", width: 26 },
-      { header: "Required", key: "Required", width: 8 },
-      { header: "Enum", key: "Enum", width: 40 },
-      { header: "Example", key: "Example", width: 40 },
-      { header: "Description", key: "Description", width: 60 },
-      { header: "SourceModel", key: "SourceModel", width: 28 },
-      { header: "ArrayDepth", key: "ArrayDepth", width: 10 },
+      { header: 'Tag', key: 'Tag', width: 20 },
+      { header: 'Method', key: 'Method', width: 8 },
+      { header: 'Path', key: 'Path', width: 60 },
+      { header: 'Status', key: 'Status', width: 8 },
+      { header: 'FieldPath', key: 'FieldPath', width: 60 },
+      { header: 'FieldName', key: 'FieldName', width: 26 },
+      { header: 'Type', key: 'Type', width: 26 },
+      { header: 'Required', key: 'Required', width: 8 },
+      { header: 'Enum', key: 'Enum', width: 40 },
+      { header: 'Example', key: 'Example', width: 40 },
+      { header: 'Description', key: 'Description', width: 60 },
+      { header: 'SourceModel', key: 'SourceModel', width: 28 },
+      { header: 'ArrayDepth', key: 'ArrayDepth', width: 10 },
     ],
-    respFieldRows
+    respFieldRows,
   );
 
   await wb.xlsx.writeFile(args.output);
@@ -202,7 +191,7 @@ for (const [p, pathItem] of Object.entries(paths)) {
    - ParamFields: ${paramFieldRows.length} rows
    - ResponseFields: ${respFieldRows.length} rows`);
 })().catch((e) => {
-  console.error("❌ Failed:", e?.stack || e);
+  console.error('❌ Failed:', e?.stack || e);
   process.exit(1);
 });
 
@@ -212,9 +201,9 @@ function parseArgs(argv) {
   const out = {};
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a.startsWith("--")) {
+    if (a.startsWith('--')) {
       const k = a.slice(2);
-      const v = argv[i + 1] && !argv[i + 1].startsWith("--") ? argv[++i] : true;
+      const v = argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[++i] : true;
       out[k] = v;
     }
   }
@@ -231,7 +220,7 @@ function required(obj, keys) {
 function createResolver(spec) {
   const cache = new Map();
   function byPointer(ptr) {
-    const parts = String(ptr).replace(/^#\//, "").split("/");
+    const parts = String(ptr).replace(/^#\//, '').split('/');
     let cur = spec;
     for (const p of parts) {
       if (cur == null) return null;
@@ -260,8 +249,7 @@ function resolveRef(resolver, obj) {
 }
 
 function getConsumes(spec, op) {
-  if (op.requestBody && op.requestBody.content)
-    return Object.keys(op.requestBody.content);
+  if (op.requestBody && op.requestBody.content) return Object.keys(op.requestBody.content);
   return op.consumes || spec.consumes || [];
 }
 function getProduces(spec, op) {
@@ -279,44 +267,44 @@ function getProduces(spec, op) {
 function getParamSchema(prm) {
   if (!prm) return null;
   if (prm.schema) return prm.schema; // v3
-  if (prm.in === "body" && prm.schema) return prm.schema; // v2
+  if (prm.in === 'body' && prm.schema) return prm.schema; // v2
   return prm; // primitive param (v2)
 }
 
 /* ----- Type/enum/example helpers ----- */
 function guessSchemaType(s) {
-  if (!s) return "";
+  if (!s) return '';
   if (s.$ref) return refName(s.$ref);
-  if (s.type === "array") {
-    const inner = s.items ? guessSchemaType(s.items) : "";
-    return inner ? `array<${inner}>` : "array";
+  if (s.type === 'array') {
+    const inner = s.items ? guessSchemaType(s.items) : '';
+    return inner ? `array<${inner}>` : 'array';
   }
   if (s.type) return s.format ? `${s.type}(${s.format})` : s.type;
-  if (s.oneOf || s.anyOf || s.allOf) return "composed";
-  if (s.properties) return "object";
-  return "";
+  if (s.oneOf || s.anyOf || s.allOf) return 'composed';
+  if (s.properties) return 'object';
+  return '';
 }
 function refName(ref) {
-  const parts = String(ref).split("/");
+  const parts = String(ref).split('/');
   return parts[parts.length - 1];
 }
 function enumText(s) {
   const e = s && s.enum;
-  return e ? e.join(" | ") : "";
+  return e ? e.join(' | ') : '';
 }
 function defaultText(s) {
-  return s && s.default != null ? String(s.default) : "";
+  return s && s.default != null ? String(s.default) : '';
 }
 function exampleText(schema, ex) {
-  if (!schema && !ex) return "";
-  if (typeof ex === "string") return ex;
-  if (ex && typeof ex === "object") {
+  if (!schema && !ex) return '';
+  if (typeof ex === 'string') return ex;
+  if (ex && typeof ex === 'object') {
     if (ex.value != null) return safeJson(ex.value);
     const first = Object.values(ex)[0];
     if (first && first.value != null) return safeJson(first.value);
   }
   if (schema && schema.example != null) return safeJson(schema.example);
-  return "";
+  return '';
 }
 function safeJson(o) {
   try {
@@ -335,11 +323,11 @@ function safeJson(o) {
  */
 function flattenToRows({ rows, schema, origin }) {
   const maxDepth = args.maxDepth ? parseInt(args.maxDepth, 10) : Infinity;
-  const startRef = schema.$ref ? refName(schema.$ref) : "";
+  const startRef = schema.$ref ? refName(schema.$ref) : '';
   _walk(resolveRef(resolver, schema) || {}, {
     path: [],
     arrayDepth: 0,
-    sourceModel: startRef || (isObjectSchema(schema) ? "(inline-object)" : ""),
+    sourceModel: startRef || (isObjectSchema(schema) ? '(inline-object)' : ''),
     required: new Set(schema.required || []),
     depth: 0,
   });
@@ -349,33 +337,26 @@ function flattenToRows({ rows, schema, origin }) {
       // 超过层级限制，不再继续递归，只输出一个占位行
       rows.push(
         buildFieldRow(origin, {
-          FieldPath: buildPath(ctx.path) || "(maxDepth)",
-          FieldName: ctx.path.length ? ctx.path[ctx.path.length - 1] : "(root)",
-          Type: guessSchemaType(sch) || "object",
-          Required: "NO",
+          FieldPath: buildPath(ctx.path) || '(maxDepth)',
+          FieldName: ctx.path.length ? ctx.path[ctx.path.length - 1] : '(root)',
+          Type: guessSchemaType(sch) || 'object',
+          Required: 'NO',
           Enum: enumText(sch),
           Example: exampleText(sch),
-          Description: sch.description || "",
+          Description: sch.description || '',
           SourceModel: sch.$ref ? refName(sch.$ref) : ctx.sourceModel,
           ArrayDepth: ctx.arrayDepth,
-        })
+        }),
       );
       return;
     }
 
     sch = resolveRef(resolver, sch) || {};
     const merged = mergeComposedObject(sch);
-    const hereModel = sch.$ref
-      ? refName(sch.$ref)
-      : isObjectSchema(sch)
-      ? ctx.sourceModel
-      : "";
+    const hereModel = sch.$ref ? refName(sch.$ref) : isObjectSchema(sch) ? ctx.sourceModel : '';
 
     if (merged.isObject) {
-      const req = new Set([
-        ...(sch.required || []),
-        ...(merged.required || []),
-      ]);
+      const req = new Set([...(sch.required || []), ...(merged.required || [])]);
       const props = { ...(sch.properties || {}), ...(merged.properties || {}) };
 
       for (const [name, propSchema0] of Object.entries(props)) {
@@ -384,31 +365,25 @@ function flattenToRows({ rows, schema, origin }) {
         const nextPath = ctx.path.concat(name);
 
         // array
-        if (propSchema.type === "array" || propSchema.items) {
+        if (propSchema.type === 'array' || propSchema.items) {
           const inner = resolveRef(resolver, propSchema.items || {});
           rows.push(
             buildFieldRow(origin, {
-              FieldPath: buildPath(nextPath) + "[]",
+              FieldPath: buildPath(nextPath) + '[]',
               FieldName: name,
-              Type: `array<${guessSchemaType(inner) || "unknown"}>`,
-              Required: req.has(name) ? "YES" : "NO",
+              Type: `array<${guessSchemaType(inner) || 'unknown'}>`,
+              Required: req.has(name) ? 'YES' : 'NO',
               Enum: enumText(propSchema),
               Example: exampleText(propSchema),
-              Description: propSchema.description || "",
-              SourceModel: propSchema.$ref
-                ? refName(propSchema.$ref)
-                : hereModel,
+              Description: propSchema.description || '',
+              SourceModel: propSchema.$ref ? refName(propSchema.$ref) : hereModel,
               ArrayDepth: ctx.arrayDepth + 1,
-            })
+            }),
           );
           _walk(inner, {
-            path: nextPath.concat("[]"),
+            path: nextPath.concat('[]'),
             arrayDepth: ctx.arrayDepth + 1,
-            sourceModel: inner.$ref
-              ? refName(inner.$ref)
-              : isObjectSchema(inner)
-              ? hereModel
-              : "",
+            sourceModel: inner.$ref ? refName(inner.$ref) : isObjectSchema(inner) ? hereModel : '',
             required: new Set(inner.required || []),
             depth: ctx.depth + 1,
           });
@@ -421,16 +396,14 @@ function flattenToRows({ rows, schema, origin }) {
             buildFieldRow(origin, {
               FieldPath: buildPath(nextPath),
               FieldName: name,
-              Type: "object",
-              Required: req.has(name) ? "YES" : "NO",
+              Type: 'object',
+              Required: req.has(name) ? 'YES' : 'NO',
               Enum: enumText(propSchema),
               Example: exampleText(propSchema),
-              Description: propSchema.description || "",
-              SourceModel: propSchema.$ref
-                ? refName(propSchema.$ref)
-                : hereModel,
+              Description: propSchema.description || '',
+              SourceModel: propSchema.$ref ? refName(propSchema.$ref) : hereModel,
               ArrayDepth: ctx.arrayDepth,
-            })
+            }),
           );
           _walk(propSchema, {
             path: nextPath,
@@ -448,44 +421,38 @@ function flattenToRows({ rows, schema, origin }) {
             FieldPath: buildPath(nextPath),
             FieldName: name,
             Type: propType,
-            Required: req.has(name) ? "YES" : "NO",
+            Required: req.has(name) ? 'YES' : 'NO',
             Enum: enumText(propSchema),
             Example: exampleText(propSchema),
-            Description: propSchema.description || "",
+            Description: propSchema.description || '',
             SourceModel: propSchema.$ref ? refName(propSchema.$ref) : hereModel,
             ArrayDepth: ctx.arrayDepth,
-          })
+          }),
         );
       }
       return;
     }
 
     // array root
-    if (sch.type === "array" || sch.items) {
+    if (sch.type === 'array' || sch.items) {
       const inner = resolveRef(resolver, sch.items || {});
       rows.push(
         buildFieldRow(origin, {
-          FieldPath: buildPath(ctx.path.concat("[]")),
-          FieldName: ctx.path.length
-            ? ctx.path[ctx.path.length - 1]
-            : "(items)",
-          Type: `array<${guessSchemaType(inner) || "unknown"}>`,
-          Required: "NO",
+          FieldPath: buildPath(ctx.path.concat('[]')),
+          FieldName: ctx.path.length ? ctx.path[ctx.path.length - 1] : '(items)',
+          Type: `array<${guessSchemaType(inner) || 'unknown'}>`,
+          Required: 'NO',
           Enum: enumText(sch),
           Example: exampleText(sch),
-          Description: sch.description || "",
+          Description: sch.description || '',
           SourceModel: sch.$ref ? refName(sch.$ref) : ctx.sourceModel,
           ArrayDepth: ctx.arrayDepth + 1,
-        })
+        }),
       );
       _walk(inner, {
-        path: ctx.path.concat("[]"),
+        path: ctx.path.concat('[]'),
         arrayDepth: ctx.arrayDepth + 1,
-        sourceModel: inner.$ref
-          ? refName(inner.$ref)
-          : isObjectSchema(inner)
-          ? ctx.sourceModel
-          : "",
+        sourceModel: inner.$ref ? refName(inner.$ref) : isObjectSchema(inner) ? ctx.sourceModel : '',
         required: new Set(inner.required || []),
         depth: ctx.depth + 1,
       });
@@ -495,22 +462,22 @@ function flattenToRows({ rows, schema, origin }) {
     // primitive root
     rows.push(
       buildFieldRow(origin, {
-        FieldPath: buildPath(ctx.path.length ? ctx.path : ["(root)"]),
-        FieldName: ctx.path.length ? ctx.path[ctx.path.length - 1] : "(root)",
+        FieldPath: buildPath(ctx.path.length ? ctx.path : ['(root)']),
+        FieldName: ctx.path.length ? ctx.path[ctx.path.length - 1] : '(root)',
         Type: guessSchemaType(sch),
-        Required: "NO",
+        Required: 'NO',
         Enum: enumText(sch),
         Example: exampleText(sch),
-        Description: sch.description || "",
+        Description: sch.description || '',
         SourceModel: sch.$ref ? refName(sch.$ref) : ctx.sourceModel,
         ArrayDepth: ctx.arrayDepth,
-      })
+      }),
     );
   }
 }
 
 function buildFieldRow(origin, data) {
-  if (origin.Kind === "Param") {
+  if (origin.Kind === 'Param') {
     return {
       Tag: origin.Tag,
       Method: origin.Method,
@@ -524,7 +491,7 @@ function buildFieldRow(origin, data) {
       Enum: data.Enum,
       Example: data.Example,
       Description: normalizeText(data.Description),
-      SourceModel: data.SourceModel || "",
+      SourceModel: data.SourceModel || '',
       ArrayDepth: data.ArrayDepth || 0,
     };
   } else {
@@ -540,27 +507,24 @@ function buildFieldRow(origin, data) {
       Enum: data.Enum,
       Example: data.Example,
       Description: normalizeText(data.Description),
-      SourceModel: data.SourceModel || "",
+      SourceModel: data.SourceModel || '',
       ArrayDepth: data.ArrayDepth || 0,
     };
   }
 }
 
 function normalizeText(s) {
-  return (s || "").toString().replace(/\s+/g, " ").trim();
+  return (s || '').toString().replace(/\s+/g, ' ').trim();
 }
 function buildPath(arr) {
-  if (!arr || !arr.length) return "";
+  if (!arr || !arr.length) return '';
   return arr
-    .join(".")
-    .replace(/\.?\[\]\.?/g, "[]" + ".")
-    .replace(/\.$/, "");
+    .join('.')
+    .replace(/\.?\[\]\.?/g, '[]' + '.')
+    .replace(/\.$/, '');
 }
 function isObjectSchema(s) {
-  return !!(
-    s &&
-    (s.type === "object" || s.properties || s.allOf || s.oneOf || s.anyOf)
-  );
+  return !!(s && (s.type === 'object' || s.properties || s.allOf || s.oneOf || s.anyOf));
 }
 function mergeComposedObject(schema) {
   // shallow merged view for first-level props/required when composed
@@ -585,7 +549,7 @@ function mergeComposedObject(schema) {
     collect(schema.anyOf[0]);
     out.isObject = true;
   }
-  if (schema.type === "object" || schema.properties) {
+  if (schema.type === 'object' || schema.properties) {
     collect(schema);
     out.isObject = true;
   }
@@ -600,23 +564,18 @@ function addSheet(wb, name, columns, rows) {
   ws.getRow(1).font = { bold: true };
   for (const r of rows) ws.addRow(r);
   ws.eachRow((row, i) => {
-    row.alignment = { vertical: "top", wrapText: true };
+    row.alignment = { vertical: 'top', wrapText: true };
     if (i === 1)
       row.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "FFEFEFEF" },
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFEFEFEF' },
       };
   });
 }
 function pickBestMedia(content) {
-  if (!content || typeof content !== "object") return null;
-  const jsonTypes = [
-    "application/json",
-    "application/*+json",
-    "text/json",
-    "text/*+json",
-  ];
-  for (const t of jsonTypes) if (content[t]) return content[t]; 
+  if (!content || typeof content !== 'object') return null;
+  const jsonTypes = ['application/json', 'application/*+json', 'text/json', 'text/*+json'];
+  for (const t of jsonTypes) if (content[t]) return content[t];
   return null;
 }

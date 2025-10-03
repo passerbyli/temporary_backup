@@ -1,6 +1,6 @@
-const mysql = require("mysql2");
-const fs = require("fs");
-const http = require("http");
+const mysql = require('mysql2');
+const fs = require('fs');
+const http = require('http');
 
 /**
  * 通过API获取图片的Base64编码
@@ -10,20 +10,20 @@ const http = require("http");
 function getBase64FromImagePath(imagePath) {
   return new Promise((resolve, reject) => {
     const options = {
-      hostname: "api1.example.com",
+      hostname: 'api1.example.com',
       port: 80,
       path: `/getBase64?imagePath=${encodeURIComponent(imagePath)}`,
-      method: "GET",
+      method: 'GET',
     };
 
     const req = http.request(options, (res) => {
-      let data = "";
+      let data = '';
 
-      res.on("data", (chunk) => {
+      res.on('data', (chunk) => {
         data += chunk;
       });
 
-      res.on("end", () => {
+      res.on('end', () => {
         try {
           const parsedData = JSON.parse(data);
           resolve(parsedData.base64);
@@ -33,7 +33,7 @@ function getBase64FromImagePath(imagePath) {
       });
     });
 
-    req.on("error", (error) => {
+    req.on('error', (error) => {
       reject(error);
     });
 
@@ -51,24 +51,24 @@ function uploadImageAndGetNewUrl(base64Image) {
     const postData = JSON.stringify({ image: base64Image });
 
     const options = {
-      hostname: "api2.example.com",
+      hostname: 'api2.example.com',
       port: 80,
-      path: "/upload",
-      method: "POST",
+      path: '/upload',
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        "Content-Length": Buffer.byteLength(postData),
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(postData),
       },
     };
 
     const req = http.request(options, (res) => {
-      let data = "";
+      let data = '';
 
-      res.on("data", (chunk) => {
+      res.on('data', (chunk) => {
         data += chunk;
       });
 
-      res.on("end", () => {
+      res.on('end', () => {
         try {
           const parsedData = JSON.parse(data);
           resolve(parsedData.newUrl);
@@ -78,7 +78,7 @@ function uploadImageAndGetNewUrl(base64Image) {
       });
     });
 
-    req.on("error", (error) => {
+    req.on('error', (error) => {
       reject(error);
     });
 
@@ -107,12 +107,12 @@ async function replaceImagePathsInSql(sqlScript, imagePathPattern) {
 }
 
 const dbConfig = {
-  host: "localhost",
-  user: "root",
-  password: "admin2312",
-  database: "mall2",
-  port: "3306",
-  timezone: "+00:00",
+  host: 'localhost',
+  user: 'root',
+  password: 'admin2312',
+  database: 'mall2',
+  port: '3306',
+  timezone: '+00:00',
 };
 
 function createConnection(dbConfig) {
@@ -138,10 +138,10 @@ function generateTimestampedFilename(baseName) {
   const timestamp =
     new Date()
       .toISOString()
-      .replace(/[-:.TZ]/g, "")
+      .replace(/[-:.TZ]/g, '')
       .slice(0, 17) +
-    "." +
-    new Date().getMilliseconds().toString().padStart(3, "0");
+    '.' +
+    new Date().getMilliseconds().toString().padStart(3, '0');
   return `${baseName}_${timestamp}.sql`;
 }
 
@@ -173,7 +173,7 @@ async function getPrimaryKeyColumns(connection, tableName) {
 
   const primaryKeyColumns = {};
   rows.forEach((row) => {
-    primaryKeyColumns[row.COLUMN_NAME] = row.EXTRA.includes("auto_increment");
+    primaryKeyColumns[row.COLUMN_NAME] = row.EXTRA.includes('auto_increment');
   });
 
   return primaryKeyColumns;
@@ -186,14 +186,14 @@ async function getPrimaryKeyColumns(connection, tableName) {
  */
 function formatValue(value, dataType) {
   if (value === null || value === undefined) {
-    return "null";
-  } else if (dataType === "BLOB" || dataType === "LONG_BLOB") {
+    return 'null';
+  } else if (dataType === 'BLOB' || dataType === 'LONG_BLOB') {
     // 将 BLOB 字段转为十六进制
-    return `x'${value.toString("hex")}'`;
-  } else if (typeof value === "string") {
+    return `x'${value.toString('hex')}'`;
+  } else if (typeof value === 'string') {
     return `'${value}'`;
   } else if (value instanceof Date) {
-    return `'${value.toISOString().slice(0, 19).replace("T", " ")}'`;
+    return `'${value.toISOString().slice(0, 19).replace('T', ' ')}'`;
   } else {
     return value;
   }
@@ -207,39 +207,23 @@ function formatValue(value, dataType) {
  * @param {Object} primaryKeyColumns - 主键列及其自增信息
  * @returns {string} - 返回生成的 INSERT 语句
  */
-function generateInsertScript(
-  tableName,
-  rowData,
-  fieldsToUpdate,
-  primaryKeyColumns,
-  ignorePK = false
-) {
+function generateInsertScript(tableName, rowData, fieldsToUpdate, primaryKeyColumns, ignorePK = false) {
   const columns = [];
   const values = [];
 
   for (const [col, val] of Object.entries(rowData)) {
     if (ignorePK) {
       columns.push(col);
-      values.push(
-        formatValue(
-          fieldsToUpdate[col] !== undefined ? fieldsToUpdate[col] : val
-        )
-      );
+      values.push(formatValue(fieldsToUpdate[col] !== undefined ? fieldsToUpdate[col] : val));
     } else {
       if (!primaryKeyColumns[col]) {
         columns.push(col);
-        values.push(
-          formatValue(
-            fieldsToUpdate[col] !== undefined ? fieldsToUpdate[col] : val
-          )
-        );
+        values.push(formatValue(fieldsToUpdate[col] !== undefined ? fieldsToUpdate[col] : val));
       }
     }
   }
 
-  return `INSERT INTO ${dbConfig.database}.${tableName} (${columns.join(
-    ", "
-  )}) VALUES (${values.join(", ")});`;
+  return `INSERT INTO ${dbConfig.database}.${tableName} (${columns.join(', ')}) VALUES (${values.join(', ')});`;
 }
 
 /**
@@ -251,28 +235,16 @@ function generateInsertScript(
  * @param {string} whereClause - WHERE 子句
  * @returns {string} - 返回生成的 UPDATE 语句
  */
-function generateUpdateScript(
-  tableName,
-  rowData,
-  fieldsToUpdate,
-  primaryKeyColumns,
-  whereClause
-) {
+function generateUpdateScript(tableName, rowData, fieldsToUpdate, primaryKeyColumns, whereClause) {
   const updates = [];
 
   for (const [col, val] of Object.entries(rowData)) {
     if (!primaryKeyColumns.includes(col)) {
-      updates.push(
-        `${col} = ${formatValue(
-          fieldsToUpdate[col] !== undefined ? fieldsToUpdate[col] : val
-        )}`
-      );
+      updates.push(`${col} = ${formatValue(fieldsToUpdate[col] !== undefined ? fieldsToUpdate[col] : val)}`);
     }
   }
 
-  return `UPDATE ${dbConfig.database}.${tableName} SET ${updates.join(
-    ", "
-  )} WHERE ${whereClause};`;
+  return `UPDATE ${dbConfig.database}.${tableName} SET ${updates.join(', ')} WHERE ${whereClause};`;
 }
 
 /**
@@ -285,7 +257,7 @@ function generateUpdateScript(
 function generateEditScript(tableName, fieldsToUpdate, whereClause) {
   const updates = Object.entries(fieldsToUpdate)
     .map(([col, val]) => `${col} = ${formatValue(val)}`)
-    .join(", ");
+    .join(', ');
 
   return `UPDATE ${dbConfig.database}.${tableName} SET ${updates} WHERE ${whereClause};`;
 }
@@ -305,9 +277,7 @@ function buildWhereClause(whereClause, primaryKeyColumns = null, rowData = {}) {
     for (const [col, val] of Object.entries(whereClause)) {
       if (Array.isArray(val)) {
         // 如果条件值是数组，使用 IN 语句
-        clauses.push(
-          `${col} IN (${val.map((v) => formatValue(v)).join(", ")})`
-        );
+        clauses.push(`${col} IN (${val.map((v) => formatValue(v)).join(', ')})`);
       } else {
         clauses.push(`${col} = ${formatValue(val)}`);
       }
@@ -324,7 +294,7 @@ function buildWhereClause(whereClause, primaryKeyColumns = null, rowData = {}) {
   }
 
   // 返回最终的 WHERE 子句
-  return clauses.length > 0 ? clauses.join(" AND ") : "1=1";
+  return clauses.length > 0 ? clauses.join(' AND ') : '1=1';
 }
 
 /**
@@ -334,13 +304,10 @@ function buildWhereClause(whereClause, primaryKeyColumns = null, rowData = {}) {
  * @returns {string} - 返回生成的SQL脚本
  */
 async function processTable(connection, tableConfig) {
-  const { tableName, operationType, whereClause, fieldsToUpdate, ignorePK } =
-    tableConfig;
+  const { tableName, operationType, whereClause, fieldsToUpdate, ignorePK } = tableConfig;
   const primaryKeyColumns = await getPrimaryKeyColumns(connection, tableName);
   // 构建 SELECT 查询，确保 WHERE 子句仅基于传入的条件
-  const selectQuery = `SELECT * FROM ${
-    dbConfig.database
-  }.${tableName} WHERE ${buildWhereClause(whereClause)}`;
+  const selectQuery = `SELECT * FROM ${dbConfig.database}.${tableName} WHERE ${buildWhereClause(whereClause)}`;
   const [rows] = await connection.query(selectQuery);
 
   // 初始化 SQL 语句注释
@@ -350,29 +317,15 @@ async function processTable(connection, tableConfig) {
   rows.forEach((row) => {
     let whereClauseStr = buildWhereClause(whereClause, primaryKeyColumns, row);
     switch (operationType) {
-      case "insert":
-        sqlStatements +=
-          generateInsertScript(
-            tableName,
-            row,
-            fieldsToUpdate,
-            primaryKeyColumns,
-            ignorePK
-          ) + "\n";
+      case 'insert':
+        sqlStatements += generateInsertScript(tableName, row, fieldsToUpdate, primaryKeyColumns, ignorePK) + '\n';
         break;
-      case "update":
+      case 'update':
         sqlStatements +=
-          generateUpdateScript(
-            tableName,
-            row,
-            fieldsToUpdate,
-            Object.keys(primaryKeyColumns),
-            whereClauseStr
-          ) + "\n";
+          generateUpdateScript(tableName, row, fieldsToUpdate, Object.keys(primaryKeyColumns), whereClauseStr) + '\n';
         break;
-      case "edit":
-        sqlStatements +=
-          generateEditScript(tableName, fieldsToUpdate, whereClauseStr) + "\n";
+      case 'edit':
+        sqlStatements += generateEditScript(tableName, fieldsToUpdate, whereClauseStr) + '\n';
         break;
     }
   });
@@ -389,43 +342,43 @@ async function generateSQL(tablesConfig) {
   try {
     await connect();
 
-    console.log("111");
+    console.log('111');
     // 准备插入数据
-    const title = "Sample Title";
-    const description = "This is a description";
+    const title = 'Sample Title';
+    const description = 'This is a description';
     try {
       // 模拟读取一个文件作为 LONGBLOB 数据
-      const blobData = fs.readFileSync("./ZfRGPRC_(Sc)02.pdf"); // 替换为你的文件路径
+      const blobData = fs.readFileSync('./ZfRGPRC_(Sc)02.pdf'); // 替换为你的文件路径
 
-      console.log("11122", blobData);
+      console.log('11122', blobData);
       // 插入语句
       const query = `INSERT INTO mall2.pms_product (name,product_sn,file) VALUES ('11','222',?)`;
 
       // 执行插入
       connection.query(query, [blobData], (error, results) => {
         if (error) {
-          console.error("插入失败:", error.message);
+          console.error('插入失败:', error.message);
         } else {
-          console.log("数据插入成功，插入 ID:", results.insertId);
+          console.log('数据插入成功，插入 ID:', results.insertId);
         }
-        console.log("99999");
+        console.log('99999');
         // connection.end(); // 关闭数据库连接
       });
     } catch (error) {
       console.log(error);
     }
 
-    let sqlScript = "";
+    let sqlScript = '';
     for (const tableConfig of tablesConfig) {
       const sqlStatements = await processTable(connection, tableConfig);
-      sqlScript += sqlStatements + "\n";
+      sqlScript += sqlStatements + '\n';
     }
 
-    const timestampedFilename = generateTimestampedFilename("script_execute");
+    const timestampedFilename = generateTimestampedFilename('script_execute');
     const outputFilePath = `./${timestampedFilename}`;
     writeToFile(outputFilePath, sqlScript);
   } catch (error) {
-    console.log("generateSQL:", error);
+    console.log('generateSQL:', error);
   } finally {
     await disconnect();
   }
@@ -451,7 +404,7 @@ async function generateBackupScript(tables) {
         FROM INFORMATION_SCHEMA.COLUMNS
         WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?
       `,
-        [dbConfig.database, tableName]
+        [dbConfig.database, tableName],
       );
 
       const columnDataTypes = {};
@@ -459,47 +412,39 @@ async function generateBackupScript(tables) {
         columnDataTypes[col.COLUMN_NAME] = col.DATA_TYPE;
       });
 
-      const query = `SELECT * FROM ${
-        dbConfig.database
-      }.${tableName}  WHERE ${buildWhereClause(whereClause)}`;
+      const query = `SELECT * FROM ${dbConfig.database}.${tableName}  WHERE ${buildWhereClause(whereClause)}`;
       sqlScript += `\n-- Backup table:${dbConfig.database}.${tableName}\n`;
       sqlScript += `-- Query:${query}\n`;
 
-      sqlScript += `delete from ${
-        dbConfig.database
-      }.${tableName} WHERE ${buildWhereClause(whereClause)};\n`;
+      sqlScript += `delete from ${dbConfig.database}.${tableName} WHERE ${buildWhereClause(whereClause)};\n`;
 
       const [results, fields] = await connection.query(query);
 
       // 找到 LONGBLOB 类型的字段
       const blobFields = fields
-        .filter(
-          (field) =>
-            field.type === mysql.Types.BLOB ||
-            field.type === mysql.Types.LONG_BLOB
-        )
+        .filter((field) => field.type === mysql.Types.BLOB || field.type === mysql.Types.LONG_BLOB)
         .map((field) => field.name);
 
       results.forEach((row) => {
         let columns = Object.keys(row)
           .map((col) => `\`${col}\``)
-          .join(", ");
+          .join(', ');
         let values = Object.values(row)
           .map(([col, val]) => {
             console.log(col);
             return formatValue(val, columnDataTypes[col]);
           })
-          .join(", ");
+          .join(', ');
 
         sqlScript += `INSERT INTO ${dbConfig.database}.${tableName} (${columns}) VALUES (${values});\n`;
       });
     }
 
-    const timestampedFilename = generateTimestampedFilename("script_backup");
+    const timestampedFilename = generateTimestampedFilename('script_backup');
     const outputFilePath = `./${timestampedFilename}`;
     writeToFile(outputFilePath, sqlScript);
   } catch (error) {
-    console.error("Error generateBackupScript:", error);
+    console.error('Error generateBackupScript:', error);
   } finally {
     disconnect();
   }
@@ -508,23 +453,23 @@ async function generateBackupScript(tables) {
 // 示例
 const tables = [
   {
-    tableName: "pms_product",
-    whereClause: { name: "11" },
-    operationType: "insert",
-    fieldsToUpdate: { pic: "newValue1", product_sn: "xxxxx" },
+    tableName: 'pms_product',
+    whereClause: { name: '11' },
+    operationType: 'insert',
+    fieldsToUpdate: { pic: 'newValue1', product_sn: 'xxxxx' },
     ignorePK: true,
   },
   {
-    tableName: "pms_product_attribute",
-    whereClause: { type: 1, select_type: "2", id: 21 },
-    operationType: "update",
-    fieldsToUpdate: { input_type: "888", input_list: "QQQQ" },
+    tableName: 'pms_product_attribute',
+    whereClause: { type: 1, select_type: '2', id: 21 },
+    operationType: 'update',
+    fieldsToUpdate: { input_type: '888', input_list: 'QQQQ' },
   },
   {
-    tableName: "pms_brand",
-    whereClause: { sort: "500" },
-    operationType: "edit",
-    fieldsToUpdate: { name: "小米", sort: 1234 },
+    tableName: 'pms_brand',
+    whereClause: { sort: '500' },
+    operationType: 'edit',
+    fieldsToUpdate: { name: '小米', sort: 1234 },
   },
 ];
 

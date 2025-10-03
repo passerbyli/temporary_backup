@@ -1,6 +1,6 @@
-const { Pool } = require("pg");
-const BaseAdapter = require("./baseAdapter");
-const { convertRowToCamelCase } = require("./utils/format");
+const { Pool } = require('pg');
+const BaseAdapter = require('./baseAdapter');
+const { convertRowToCamelCase } = require('./utils/format');
 
 class PostgresAdapter extends BaseAdapter {
   async connect() {
@@ -18,13 +18,13 @@ class PostgresAdapter extends BaseAdapter {
       if (Array.isArray(val)) {
         const placeholders = val.map(() => `$${index++}`);
         values.push(...val);
-        return `(${placeholders.join(",")})`;
+        return `(${placeholders.join(',')})`;
       } else {
         values.push(val);
         return `$${index++}`;
       }
     });
-    this.log("sql", `执行SQL: ${transformedSql} [${values.join(", ")}]`);
+    this.log('sql', `执行SQL: ${transformedSql} [${values.join(', ')}]`);
     return { sql: transformedSql, values };
   }
 
@@ -44,13 +44,9 @@ class PostgresAdapter extends BaseAdapter {
     const total = parseInt(countRes.rows[0].total, 10);
 
     const offset = (page - 1) * pageSize;
-    const pagedSql = `${preparedSql} LIMIT $${values.length + 1} OFFSET $${
-      values.length + 2
-    }`;
+    const pagedSql = `${preparedSql} LIMIT $${values.length + 1} OFFSET $${values.length + 2}`;
     const res = await this.pool.query(pagedSql, [...values, pageSize, offset]);
-    const resultRows = this.camelCase
-      ? res.rows.map(convertRowToCamelCase)
-      : res.rows;
+    const resultRows = this.camelCase ? res.rows.map(convertRowToCamelCase) : res.rows;
 
     return { total, page, pageSize, rows: resultRows };
   }
@@ -76,7 +72,7 @@ class PostgresAdapter extends BaseAdapter {
 
   async batchInsert(table, columns, rows) {
     if (!Array.isArray(rows) || rows.length === 0) {
-      throw new Error("批量插入数据不能为空");
+      throw new Error('批量插入数据不能为空');
     }
     await this.connect();
 
@@ -89,26 +85,24 @@ class PostgresAdapter extends BaseAdapter {
         values.push(row[col]);
         return `$${placeholderIndex}`;
       });
-      placeholders.push(`(${rowPlaceholders.join(", ")})`);
+      placeholders.push(`(${rowPlaceholders.join(', ')})`);
     });
 
-    const columnList = columns.map((col) => `"${col}"`).join(", ");
-    const sql = `INSERT INTO "${table}" (${columnList}) VALUES ${placeholders.join(
-      ", "
-    )}`;
+    const columnList = columns.map((col) => `"${col}"`).join(', ');
+    const sql = `INSERT INTO "${table}" (${columnList}) VALUES ${placeholders.join(', ')}`;
 
-    this.log("sql", `批量插入SQL: ${sql} [${values.join(", ")}]`);
+    this.log('sql', `批量插入SQL: ${sql} [${values.join(', ')}]`);
     return await this.pool.query(sql, values);
   }
 
-  async upsert(table, columns, rows, conflictKeys = ["id"]) {
+  async upsert(table, columns, rows, conflictKeys = ['id']) {
     if (!Array.isArray(rows) || rows.length === 0) {
-      throw new Error("Upsert 数据不能为空");
+      throw new Error('Upsert 数据不能为空');
     }
 
     await this.connect();
 
-    const allColumns = columns.map((c) => `"${c}"`).join(", ");
+    const allColumns = columns.map((c) => `"${c}"`).join(', ');
     const placeholders = [];
     const values = [];
 
@@ -118,26 +112,24 @@ class PostgresAdapter extends BaseAdapter {
         values.push(row[col]);
         return `$${placeholderIndex}`;
       });
-      placeholders.push(`(${rowPlaceholders.join(", ")})`);
+      placeholders.push(`(${rowPlaceholders.join(', ')})`);
     });
 
     // 构造 ON CONFLICT (id) DO UPDATE SET ...
-    const conflictClause = `ON CONFLICT (${conflictKeys
-      .map((k) => `"${k}"`)
-      .join(", ")}) DO UPDATE SET `;
+    const conflictClause = `ON CONFLICT (${conflictKeys.map((k) => `"${k}"`).join(', ')}) DO UPDATE SET `;
     const updateClause = columns
       .filter((col) => !conflictKeys.includes(col)) // 排除主键
       .map((col) => `"${col}" = EXCLUDED."${col}"`)
-      .join(", ");
+      .join(', ');
 
     const sql = `INSERT INTO "${table}" (${allColumns}) VALUES ${placeholders.join(
-      ", "
+      ', ',
     )} ${conflictClause} ${updateClause}`;
 
-    this.log("sql", `UPSERT SQL: ${sql} [${values.join(", ")}]`);
+    this.log('sql', `UPSERT SQL: ${sql} [${values.join(', ')}]`);
     return await this.pool.query(sql, values);
   }
-  async upsertAuto(table, rows, conflictKeys = ["id"]) {
+  async upsertAuto(table, rows, conflictKeys = ['id']) {
     const columns = Object.keys(rows[0]);
     return this.upsert(table, columns, rows, conflictKeys);
   }

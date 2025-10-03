@@ -7,7 +7,7 @@ function toCamelCase(str) {
 
 function convertRowToCamelCase(row) {
   if (Array.isArray(row)) return row.map(convertRowToCamelCase);
-  if (row === null || typeof row !== "object") return row;
+  if (row === null || typeof row !== 'object') return row;
   const result = {};
   for (const key in row) {
     result[toCamelCase(key)] = row[key];

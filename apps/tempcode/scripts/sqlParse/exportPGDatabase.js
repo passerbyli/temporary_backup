@@ -1,17 +1,17 @@
-const { Client } = require("pg");
-const fs = require("fs-extra");
-const path = require("path");
-const { spawnSync } = require("child_process");
+const { Client } = require('pg');
+const fs = require('fs-extra');
+const path = require('path');
+const { spawnSync } = require('child_process');
 
 const config = {
-  user: "postgres",
-  host: "localhost",
-  database: "lihaomin",
-  password: "admin2312",
+  user: 'postgres',
+  host: 'localhost',
+  database: 'lihaomin',
+  password: 'admin2312',
   port: 5432,
 };
 
-const OUTPUT_ROOT = path.join(__dirname, "exported_pg_schema");
+const OUTPUT_ROOT = path.join(__dirname, 'exported_pg_schema');
 
 async function getSchemas(client) {
   const res = await client.query(`
@@ -23,7 +23,7 @@ async function getSchemas(client) {
 }
 
 async function ensureDirs(dbName, schema) {
-  const types = ["tables", "views", "procedures", "functions", "indexes"];
+  const types = ['tables', 'views', 'procedures', 'functions', 'indexes'];
   for (const type of types) {
     await fs.ensureDir(path.join(OUTPUT_ROOT, dbName, schema, type));
   }
@@ -38,7 +38,7 @@ async function exportTables2(client, db, schema) {
     `
     SELECT tablename FROM pg_tables WHERE schemaname = $1
   `,
-    [schema]
+    [schema],
   );
 
   for (const row of res.rows) {
@@ -48,12 +48,12 @@ async function exportTables2(client, db, schema) {
         `
       SELECT pg_get_tabledef($1::regclass) AS create_table
     `,
-        [`${schema}.${table}`]
+        [`${schema}.${table}`],
       )
     ).rows;
 
     const sql = create_table || `-- No DDL available for ${table}`;
-    await fs.writeFile(filePath(db, schema, "tables", table), sql + ";\n");
+    await fs.writeFile(filePath(db, schema, 'tables', table), sql + ';\n');
   }
 }
 
@@ -62,47 +62,38 @@ async function exportTables(client, dbName, schema) {
     `
     SELECT tablename FROM pg_tables WHERE schemaname = $1
   `,
-    [schema]
+    [schema],
   );
 
   for (const row of res.rows) {
     const table = row.tablename;
-    const file = path.join(
-      OUTPUT_ROOT,
-      dbName,
-      schema,
-      "tables",
-      `${table}.sql`
-    );
+    const file = path.join(OUTPUT_ROOT, dbName, schema, 'tables', `${table}.sql`);
 
     const result = spawnSync(
-      "pg_dump",
+      'pg_dump',
       [
-        "-U",
+        '-U',
         config.user,
-        "-h",
+        '-h',
         config.host,
-        "-p",
+        '-p',
         config.port.toString(),
-        "-d",
+        '-d',
         dbName,
-        "-s", // schema-only
-        "-t",
+        '-s', // schema-only
+        '-t',
         `${schema}.${table}`,
       ],
       {
-        encoding: "utf-8",
+        encoding: 'utf-8',
         env: { ...process.env, PGPASSWORD: config.password },
-      }
+      },
     );
 
     if (result.status === 0) {
       await fs.writeFile(file, result.stdout);
     } else {
-      await fs.writeFile(
-        file,
-        `-- ❌ Failed to export ${schema}.${table}\n${result.stderr}`
-      );
+      await fs.writeFile(file, `-- ❌ Failed to export ${schema}.${table}\n${result.stderr}`);
     }
   }
 
@@ -114,7 +105,7 @@ async function exportViews(client, db, schema) {
     `
     SELECT table_name FROM information_schema.views WHERE table_schema = $1
   `,
-    [schema]
+    [schema],
   );
 
   for (const row of res.rows) {
@@ -124,13 +115,13 @@ async function exportViews(client, db, schema) {
         `
       SELECT pg_get_viewdef($1::regclass, true) AS ddl
     `,
-        [`${schema}.${view}`]
+        [`${schema}.${view}`],
       )
     ).rows[0]?.ddl;
 
     if (ddl) {
       const content = `CREATE OR REPLACE VIEW ${schema}.${view} AS\n${ddl};\n`;
-      await fs.writeFile(filePath(db, schema, "views", view), content);
+      await fs.writeFile(filePath(db, schema, 'views', view), content);
     }
   }
 }
@@ -143,17 +134,14 @@ async function exportFunctions(client, db, schema) {
     JOIN pg_namespace n ON p.pronamespace = n.oid
     WHERE n.nspname = $1 AND p.prokind = 'f'
   `,
-    [schema]
+    [schema],
   );
 
   for (const row of res.rows) {
-    const def = await client.query(
-      `SELECT pg_get_functiondef($1::oid) AS ddl`,
-      [row.oid]
-    );
+    const def = await client.query(`SELECT pg_get_functiondef($1::oid) AS ddl`, [row.oid]);
     const sql = def.rows[0]?.ddl;
     if (sql) {
-      await fs.writeFile(filePath(db, schema, "functions", row.proname), sql);
+      await fs.writeFile(filePath(db, schema, 'functions', row.proname), sql);
     }
   }
 }
@@ -166,17 +154,14 @@ async function exportProcedures(client, db, schema) {
     JOIN pg_namespace n ON p.pronamespace = n.oid
     WHERE n.nspname = $1 AND p.prokind = 'p'
   `,
-    [schema]
+    [schema],
   );
 
   for (const row of res.rows) {
-    const def = await client.query(
-      `SELECT pg_get_functiondef($1::oid) AS ddl`,
-      [row.oid]
-    );
+    const def = await client.query(`SELECT pg_get_functiondef($1::oid) AS ddl`, [row.oid]);
     const sql = def.rows[0]?.ddl;
     if (sql) {
-      await fs.writeFile(filePath(db, schema, "procedures", row.proname), sql);
+      await fs.writeFile(filePath(db, schema, 'procedures', row.proname), sql);
     }
   }
 }
@@ -193,14 +178,11 @@ async function exportIndexes(client, db, schema) {
     JOIN pg_class i ON i.oid = ix.indexrelid
     WHERE ns.nspname = $1 AND t.relkind = 'r'
   `,
-    [schema]
+    [schema],
   );
 
   for (const row of res.rows) {
-    await fs.writeFile(
-      filePath(db, schema, "indexes", row.index_name),
-      row.indexdef + ";\n"
-    );
+    await fs.writeFile(filePath(db, schema, 'indexes', row.index_name), row.indexdef + ';\n');
   }
 }
 

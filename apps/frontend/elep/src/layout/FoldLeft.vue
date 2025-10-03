@@ -18,7 +18,7 @@
 </template>
 
 <script>
-import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
+import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue';
 export default {
   name: 'FoldLeft',
   components: {
@@ -28,40 +28,38 @@ export default {
   data() {
     return {
       asideWidth: 300,
-    }
+    };
   },
-  props: {
-
-  },
+  props: {},
   mounted() {
-    this.bindDrop()
+    this.bindDrop();
   },
   methods: {
     // 折叠事件
     foldLeft() {
-      this.asideWidth = this.asideWidth === 0 ? 300 : 0
+      this.asideWidth = this.asideWidth === 0 ? 300 : 0;
     },
     // 绑定鼠标点击事件
     bindDrop() {
-      const _this = this
-      const drag = this.$refs.drag
+      const _this = this;
+      const drag = this.$refs.drag;
       drag.onmousedown = function (e) {
         document.onmousemove = function (e) {
-          _this.asideWidth += e.movementX
+          _this.asideWidth += e.movementX;
           if (_this.asideWidth < 20) {
-            document.onmouseup()
-            _this.asideWidth = 0
+            document.onmouseup();
+            _this.asideWidth = 0;
           }
         };
         document.onmouseup = function () {
-          document.onmousemove = null
-          document.onmouseup = null
-        }
-        return false
-      }
+          document.onmousemove = null;
+          document.onmouseup = null;
+        };
+        return false;
+      };
     },
   },
-}
+};
 </script>
 
 <style lang="scss" scoped>

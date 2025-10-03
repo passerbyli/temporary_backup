@@ -32,7 +32,7 @@
           label: 'example_proc',
         },
         isSwitchTable: true,
-      }
+      };
 
       data = {
         nodes: [
@@ -182,14 +182,14 @@
             label: 'procedure',
           },
         ],
-      }
+      };
 
       const colorMap = {
         table: '#5B8FF9',
         temp_table: '#F6BD16',
         view: '#5AD8A6',
         procedure: '#E8684A',
-      }
+      };
 
       const graph = new G6.Graph({
         container: 'container',
@@ -205,19 +205,19 @@
           style: { stroke: '#ccc', endArrow: true },
           labelCfg: { autoRotate: true, style: { fontSize: 10, fill: '#000' } },
         },
-      })
+      });
 
       data.nodes.forEach((node) => {
-        node.style = { fill: colorMap[node.type] || '#ccc' }
-      })
+        node.style = { fill: colorMap[node.type] || '#ccc' };
+      });
 
-      graph.data(data)
-      graph.render()
+      graph.data(data);
+      graph.render();
 
       window.addEventListener('resize', () => {
-        if (!graph || graph.get('destroyed')) return
-        graph.changeSize(window.innerWidth, window.innerHeight)
-      })
+        if (!graph || graph.get('destroyed')) return;
+        graph.changeSize(window.innerWidth, window.innerHeight);
+      });
     </script>
   </body>
 </html>

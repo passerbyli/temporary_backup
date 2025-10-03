@@ -1,10 +1,10 @@
-const fs = require("fs");
-const path = require("path");
+const fs = require('fs');
+const path = require('path');
 
 // 项目根目录
-const projectRoot = path.resolve(__dirname, "src");
+const projectRoot = path.resolve(__dirname, 'src');
 // 样式文件输出目录
-const cssOutputDir = path.join(projectRoot, "css");
+const cssOutputDir = path.join(projectRoot, 'css');
 
 // 创建 CSS 输出目录（如果不存在）
 if (!fs.existsSync(cssOutputDir)) {
@@ -28,9 +28,9 @@ function traverseDirectory(directory, callback) {
 
 // 处理 Vue 文件
 function processVueFile(filePath) {
-  if (!filePath.endsWith(".vue")) return;
+  if (!filePath.endsWith('.vue')) return;
 
-  const fileContent = fs.readFileSync(filePath, "utf8");
+  const fileContent = fs.readFileSync(filePath, 'utf8');
   const styleRegex = /<style([^>]*)>([\s\S]*?)<\/style>/g;
   let match;
   let updatedContent = fileContent;
@@ -44,15 +44,15 @@ function processVueFile(filePath) {
 
     // 检测是否使用了预处理器
     const langMatch = attributes.match(/lang=["'](.*?)["']/);
-    const lang = langMatch ? langMatch[1] : "css"; // 默认 css
+    const lang = langMatch ? langMatch[1] : 'css'; // 默认 css
 
     // 生成样式文件名（带后缀）
-    const fileName = path.basename(filePath, ".vue");
+    const fileName = path.basename(filePath, '.vue');
     const styleFileName = `${fileName}_${styleIndex}.${lang}`;
     const styleFilePath = path.join(cssOutputDir, styleFileName);
 
     // 写入样式文件
-    fs.writeFileSync(styleFilePath, styleContent, "utf8");
+    fs.writeFileSync(styleFilePath, styleContent, 'utf8');
 
     // 替换 Vue 文件中的 <style> 标签为外部样式引入
     const importStatement = `import '@/css/${styleFileName}';`;
@@ -63,7 +63,7 @@ function processVueFile(filePath) {
 
   // 如果有改动，更新 Vue 文件
   if (updatedContent !== fileContent) {
-    fs.writeFileSync(filePath, updatedContent, "utf8");
+    fs.writeFileSync(filePath, updatedContent, 'utf8');
     console.log(`Processed: ${filePath}`);
   }
 }
@@ -76,11 +76,7 @@ function insertImportStatement(fileContent, importStatement) {
   if (match) {
     // 在 <script> 标签后插入 import 语句
     const insertPosition = match.index + match[0].length;
-    return (
-      fileContent.slice(0, insertPosition) +
-      `\n${importStatement}` +
-      fileContent.slice(insertPosition)
-    );
+    return fileContent.slice(0, insertPosition) + `\n${importStatement}` + fileContent.slice(insertPosition);
   } else {
     // 如果没有 <script> 标签，在文件顶部插入
     return `${importStatement}\n${fileContent}`;
@@ -90,4 +86,4 @@ function insertImportStatement(fileContent, importStatement) {
 // 遍历项目中的所有 Vue 文件
 traverseDirectory(projectRoot, processVueFile);
 
-console.log("样式提取完成，所有文件已更新。");
+console.log('样式提取完成，所有文件已更新。');

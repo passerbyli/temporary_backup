@@ -1,9 +1,9 @@
-import { fileURLToPath, URL } from 'node:url'
-import path from 'path'
+import { fileURLToPath, URL } from 'node:url';
+import path from 'path';
 
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import vueDevTools from 'vite-plugin-vue-devtools'
+import { defineConfig } from 'vite';
+import vue from '@vitejs/plugin-vue';
+import vueDevTools from 'vite-plugin-vue-devtools';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -28,4 +28,4 @@ export default defineConfig({
       '@common': path.resolve(__dirname, './common'), // 假设 electron 和 vue 同级
     },
   },
-})
+});

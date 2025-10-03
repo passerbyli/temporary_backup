@@ -1,5 +1,5 @@
-const ExcelJS = require("exceljs");
-const fs = require("fs");
+const ExcelJS = require('exceljs');
+const fs = require('fs');
 
 class ExcelReader {
   constructor(filePath) {
@@ -75,10 +75,10 @@ class ExcelReader {
   _getCellPlainText(cell) {
     const val = cell.value;
 
-    if (!val) return "";
-    if (typeof val === "object") {
+    if (!val) return '';
+    if (typeof val === 'object') {
       if (val.richText) {
-        return val.richText.map((rt) => rt.text).join("");
+        return val.richText.map((rt) => rt.text).join('');
       }
       if (val.formula && val.result !== undefined) {
         return val.result;

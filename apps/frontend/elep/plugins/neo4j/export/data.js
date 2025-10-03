@@ -124,4 +124,4 @@ const graphData = {
       schedule: '0 4 * * *',
     },
   ],
-}
+};

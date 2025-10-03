@@ -1,6 +1,6 @@
-const axios = require("axios");
-const tough = require("tough-cookie"); // 用于处理cookie
-const axiosCookieJarSupport = require("axios-cookiejar-support").default;
+const axios = require('axios');
+const tough = require('tough-cookie'); // 用于处理cookie
+const axiosCookieJarSupport = require('axios-cookiejar-support').default;
 
 axiosCookieJarSupport(axios);
 
@@ -8,11 +8,11 @@ const cookieJar = new tough.CookieJar(); // 创建一个cookie jar
 
 async function loginAndGetCookies() {
   try {
-    const loginUrl = "https://example.com/api/login";
+    const loginUrl = 'https://example.com/api/login';
 
     const loginData = {
-      username: "your-username",
-      password: "your-password",
+      username: 'your-username',
+      password: 'your-password',
     };
 
     // 配置axios实例，使用cookie jar
@@ -24,7 +24,7 @@ async function loginAndGetCookies() {
     // 发起POST请求，模拟登录
     let response = await instance.post(loginUrl, loginData, {
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       maxRedirects: 0, // 禁用自动重定向
       validateStatus: function (status) {
@@ -37,7 +37,7 @@ async function loginAndGetCookies() {
       const redirectUrl = response.headers.location;
       response = await instance.get(redirectUrl, {
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         maxRedirects: 0,
         validateStatus: function (status) {
@@ -48,11 +48,11 @@ async function loginAndGetCookies() {
 
     // 最终响应后的cookie
     const cookies = cookieJar.getCookiesSync(loginUrl);
-    console.log("Final Cookies:", cookies);
+    console.log('Final Cookies:', cookies);
 
     return cookies;
   } catch (error) {
-    console.error("Error during login:", error);
+    console.error('Error during login:', error);
   }
 }
 
@@ -60,15 +60,15 @@ loginAndGetCookies();
 
 async function makeAuthenticatedRequest(cookies) {
   try {
-    const response = await axios.get("https://example.com/protected", {
+    const response = await axios.get('https://example.com/protected', {
       headers: {
-        Cookie: cookies.join("; "),
+        Cookie: cookies.join('; '),
       },
     });
 
-    console.log("Protected Page Content:", response.data);
+    console.log('Protected Page Content:', response.data);
   } catch (error) {
-    console.error("Error making authenticated request:", error);
+    console.error('Error making authenticated request:', error);
   }
 }
 

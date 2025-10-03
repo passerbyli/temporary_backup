@@ -1,11 +1,11 @@
-const pgStructure = require("pg-structure");
-const { Client } = require("pg");
+const pgStructure = require('pg-structure');
+const { Client } = require('pg');
 
 const client = new Client({
-  user: "lihaomin",
-  host: "localhost",
-  database: "postgres",
-  password: "postgres",
+  user: 'lihaomin',
+  host: 'localhost',
+  database: 'postgres',
+  password: 'postgres',
   port: 5432,
 });
 

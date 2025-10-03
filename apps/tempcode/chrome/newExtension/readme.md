@@ -86,7 +86,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   // 处理消息
   if (request.action === 'getData') {
     // 发送数据给页面
-    sendResponse({ data: '插件返回的数据' })
+    sendResponse({ data: '插件返回的数据' });
   }
-})
+});
 ```

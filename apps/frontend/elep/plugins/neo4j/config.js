@@ -11,4 +11,4 @@ module.exports = {
     user: 'neo4j',
     password: 'admin2312',
   },
-}
+};

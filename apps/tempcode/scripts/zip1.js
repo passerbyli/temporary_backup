@@ -1,6 +1,6 @@
-const fs = require("fs");
-const path = require("path");
-const archiver = require("archiver");
+const fs = require('fs');
+const path = require('path');
+const archiver = require('archiver');
 
 /**
  * 压缩目录为 zip 文件
@@ -20,14 +20,14 @@ function zipDirectory(dirPath, zipPath) {
 
   return new Promise((resolve, reject) => {
     const output = fs.createWriteStream(zipPath);
-    const archive = archiver("zip", { zlib: { level: 9 } }); // 压缩等级 0-9
+    const archive = archiver('zip', { zlib: { level: 9 } }); // 压缩等级 0-9
 
-    output.on("close", () => {
+    output.on('close', () => {
       console.log(`压缩完成: ${zipPath}, 共 ${archive.pointer()} 字节`);
       resolve(zipPath);
     });
 
-    archive.on("error", (err) => reject(err));
+    archive.on('error', (err) => reject(err));
 
     archive.pipe(output);
     archive.directory(dirPath, false); // false 表示不保留父级目录
@@ -39,13 +39,13 @@ function zipDirectory(dirPath, zipPath) {
 
 (async () => {
   try {
-    const dirPath = path.join(__dirname, "/xxx/aaa/ccc/sss/aaa");
+    const dirPath = path.join(__dirname, '/xxx/aaa/ccc/sss/aaa');
     // 不传 zipPath，默认输出到 aaa.zip
     await zipDirectory(dirPath);
 
     // 或者自定义文件名
     // await zipDirectory(dirPath, path.join(__dirname, 'custom_name.zip'));
   } catch (err) {
-    console.error("压缩失败:", err);
+    console.error('压缩失败:', err);
   }
 })();

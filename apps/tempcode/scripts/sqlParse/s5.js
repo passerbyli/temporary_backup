@@ -1,22 +1,22 @@
-const fs = require("fs");
-const path = require("path");
-const { Parser } = require("node-sql-parser");
-const xlsx = require("xlsx");
+const fs = require('fs');
+const path = require('path');
+const { Parser } = require('node-sql-parser');
+const xlsx = require('xlsx');
 
 // 创建 SQL 解析器
 const parser = new Parser();
 
 // 指定 SQL 文件目录路径
-const directoryPath = path.join(__dirname, "sql_files"); // 请根据你的目录路径调整
+const directoryPath = path.join(__dirname, 'sql_files'); // 请根据你的目录路径调整
 
 // 读取目录下的所有 SQL 文件
 fs.readdir(directoryPath, (err, files) => {
   if (err) {
-    console.error("读取目录失败:", err);
+    console.error('读取目录失败:', err);
     return;
   }
 
-  const sqlFiles = files.filter((file) => file.endsWith(".sql"));
+  const sqlFiles = files.filter((file) => file.endsWith('.sql'));
   const tables = [];
   const comments = {}; // 用于存储字段注释
 
@@ -24,14 +24,14 @@ fs.readdir(directoryPath, (err, files) => {
     const filePath = path.join(directoryPath, file);
     console.log(`处理文件: ${filePath}`);
 
-    const sqlContent = fs.readFileSync(filePath, { encoding: "utf-8" });
+    const sqlContent = fs.readFileSync(filePath, { encoding: 'utf-8' });
 
     try {
       // 解析 SQL 文件内容
       const parsed = parser.astify(sqlContent);
 
       parsed.forEach((stmt) => {
-        if (stmt.type === "create") {
+        if (stmt.type === 'create') {
           const table = {
             tableName: stmt.table, // 获取表名
             columns: [],
@@ -41,14 +41,12 @@ fs.readdir(directoryPath, (err, files) => {
           stmt.columns.forEach((column) => {
             // 如果有注释，就从 comments 中获取注释
             const columnName = column.name;
-            const columnComment = comments[`${stmt.table}.${columnName}`] || ""; // 获取字段的注释
+            const columnComment = comments[`${stmt.table}.${columnName}`] || ''; // 获取字段的注释
 
             table.columns.push({
               name: column.name, // 列名
               type: column.type, // 列类型
-              constraints: column.constraint
-                ? column.constraint.join(", ")
-                : "", // 约束条件
+              constraints: column.constraint ? column.constraint.join(', ') : '', // 约束条件
               comment: columnComment, // 字段注释
             });
           });
@@ -59,10 +57,8 @@ fs.readdir(directoryPath, (err, files) => {
       });
 
       // 解析注释
-      sqlContent.split("\n").forEach((line) => {
-        const match = line
-          .trim()
-          .match(/COMMENT ON COLUMN (\S+)\.(\S+) IS '(.*)';/);
+      sqlContent.split('\n').forEach((line) => {
+        const match = line.trim().match(/COMMENT ON COLUMN (\S+)\.(\S+) IS '(.*)';/);
         if (match) {
           const [, tableName, columnName, columnComment] = match;
           comments[`${tableName}.${columnName}`] = columnComment; // 存储字段注释
@@ -94,7 +90,7 @@ fs.readdir(directoryPath, (err, files) => {
 
   // 创建 Excel 工作簿并添加工作表
   const wb = xlsx.utils.book_new();
-  xlsx.utils.book_append_sheet(wb, ws, "Tables");
+  xlsx.utils.book_append_sheet(wb, ws, 'Tables');
 
   // 写入 Excel 文件
   const outputPath = `output_${new Date().toISOString()}.xlsx`;

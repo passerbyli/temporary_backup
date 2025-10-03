@@ -1,6 +1,6 @@
-const mysql = require("mysql2/promise");
-const BaseAdapter = require("./baseAdapter");
-const { convertRowToCamelCase } = require("./utils/format");
+const mysql = require('mysql2/promise');
+const BaseAdapter = require('./baseAdapter');
+const { convertRowToCamelCase } = require('./utils/format');
 
 class MySQLAdapter extends BaseAdapter {
   async connect() {
@@ -16,13 +16,13 @@ class MySQLAdapter extends BaseAdapter {
       const val = params[key];
       if (Array.isArray(val)) {
         values.push(...val);
-        return `(${val.map(() => "?").join(",")})`;
+        return `(${val.map(() => '?').join(',')})`;
       } else {
         values.push(val);
         return `?`;
       }
     });
-    this.log("sql", `执行SQL: ${transformedSql} [${values.join(", ")}]`);
+    this.log('sql', `执行SQL: ${transformedSql} [${values.join(', ')}]`);
     return { sql: transformedSql, values };
   }
 
@@ -43,11 +43,7 @@ class MySQLAdapter extends BaseAdapter {
 
     const offset = (page - 1) * pageSize;
     const pagedSql = `${preparedSql} LIMIT ? OFFSET ?`;
-    const [rows] = await this.pool.execute(pagedSql, [
-      ...values,
-      pageSize,
-      offset,
-    ]);
+    const [rows] = await this.pool.execute(pagedSql, [...values, pageSize, offset]);
 
     const resultRows = this.camelCase ? rows.map(convertRowToCamelCase) : rows;
     return { total, page, pageSize, rows: resultRows };

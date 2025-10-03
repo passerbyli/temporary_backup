@@ -1,11 +1,11 @@
-const { Pool } = require('pg')
-const config = require('../config')
+const { Pool } = require('pg');
+const config = require('../config');
 
-const pgPool = new Pool(config.pg)
+const pgPool = new Pool(config.pg);
 
 async function query(sql, params = []) {
-  const res = await pgPool.query(sql, params)
-  return res.rows
+  const res = await pgPool.query(sql, params);
+  return res.rows;
 }
 
-module.exports = { pgPool, query }
+module.exports = { pgPool, query };

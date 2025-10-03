@@ -1,6 +1,6 @@
-const MySQLAdapter = require("./mysqlAdapter");
-const PostgresAdapter = require("./postgresAdapter");
-const { defaultLogHook } = require("./utils/log");
+const MySQLAdapter = require('./mysqlAdapter');
+const PostgresAdapter = require('./postgresAdapter');
+const { defaultLogHook } = require('./utils/log');
 
 class DbClient {
   constructor(configMap, options = {}) {
@@ -20,9 +20,9 @@ class DbClient {
     };
 
     let adapter;
-    if (cfg.type === "mysql") {
+    if (cfg.type === 'mysql') {
       adapter = new MySQLAdapter(cfg, adapterOptions);
-    } else if (cfg.type === "postgres") {
+    } else if (cfg.type === 'postgres') {
       adapter = new PostgresAdapter(cfg, adapterOptions);
     } else {
       throw new Error(`不支持的数据库类型: ${cfg.type}`);

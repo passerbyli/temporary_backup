@@ -1,4 +1,4 @@
-const Store = require('electron-store')
+const Store = require('electron-store');
 
 const store = new Store({
   name: 'config', // 会保存为 config.json
@@ -12,7 +12,7 @@ const store = new Store({
         password: '',
         errorCount: 0,
         errorMessage: '',
-        cookies: []
+        cookies: [],
       },
       menuPosition: 'left',
       theme: 'light',
@@ -21,39 +21,39 @@ const store = new Store({
       basePath: '',
       autoLogin: {
         disable: true,
-        cron: '* * */30 * * *'
-      }
+        cron: '* * */30 * * *',
+      },
     },
     modules: {
       module2: {
         cronJobs: {
           cronJob1: '',
-          cronJob2: ''
+          cronJob2: '',
         },
-        type: 'PI'
+        type: 'PI',
       },
       module3: {
         accounts: {
           beta: { username: '', password: '', cookies: [] },
-          pord: { username: '', password: '', cookies: [] }
+          pord: { username: '', password: '', cookies: [] },
         },
-        currentEnv: 'beta'
-      }
-    }
-  }
-})
+        currentEnv: 'beta',
+      },
+    },
+  },
+});
 
 function getConfig() {
-  return store.store
+  return store.store;
 }
 
 function getBasePath() {
-  let config = getConfig()
-  return config.global.basePath
+  let config = getConfig();
+  return config.global.basePath;
 }
 
 function updateConfig(newData) {
-  store.store = { ...store.store, ...newData }
+  store.store = { ...store.store, ...newData };
 }
 
-module.exports = { getConfig, updateConfig, getBasePath }
+module.exports = { getConfig, updateConfig, getBasePath };

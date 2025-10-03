@@ -1,7 +1,7 @@
-const fs = require("fs");
-const path = require("path");
-const { parse } = require("sql-parser");
-const graphlib = require("graphlib");
+const fs = require('fs');
+const path = require('path');
+const { parse } = require('sql-parser');
+const graphlib = require('graphlib');
 
 // 初始化血缘关系图
 const lineageGraph = new graphlib.Graph({ directed: true });
@@ -12,13 +12,13 @@ const lineageGraph = new graphlib.Graph({ directed: true });
  * @returns {object} - 表和字段的血缘关系
  */
 function parseSqlFile(filePath) {
-  const sqlContent = fs.readFileSync(filePath, "utf-8");
+  const sqlContent = fs.readFileSync(filePath, 'utf-8');
   const parsedStatements = parse(sqlContent);
 
   const lineage = { tables: [], dependencies: [] };
 
   parsedStatements.forEach((statement) => {
-    if (statement.type === "CREATE_TABLE" || statement.type === "CREATE_VIEW") {
+    if (statement.type === 'CREATE_TABLE' || statement.type === 'CREATE_VIEW') {
       const tableName = statement.name;
       const columns = statement.definition.columns.map((col) => col.name);
       lineage.tables.push({ tableName, columns });
@@ -41,10 +41,10 @@ function parseSqlFile(filePath) {
  */
 function extractDependencies(statement) {
   const dependencies = [];
-  if (statement.type === "SELECT") {
+  if (statement.type === 'SELECT') {
     if (statement.from) {
       statement.from.forEach((source) => {
-        if (source.type === "table") {
+        if (source.type === 'table') {
           dependencies.push(source.name);
         }
       });
@@ -66,7 +66,7 @@ function buildLineageGraph(dir) {
 
     if (stats.isDirectory()) {
       buildLineageGraph(filePath);
-    } else if (file.endsWith(".sql")) {
+    } else if (file.endsWith('.sql')) {
       const lineage = parseSqlFile(filePath);
 
       // 将表和字段添加到血缘图
@@ -84,12 +84,12 @@ function buildLineageGraph(dir) {
 
 // 主程序入口
 function main() {
-  const schemaDir = path.join(__dirname, "schema"); // SQL 文件存储路径
+  const schemaDir = path.join(__dirname, 'schema'); // SQL 文件存储路径
   buildLineageGraph(schemaDir);
 
   // 输出血缘图
-  console.log("Lineage Graph:", lineageGraph.nodes());
-  console.log("Dependencies:", lineageGraph.edges());
+  console.log('Lineage Graph:', lineageGraph.nodes());
+  console.log('Dependencies:', lineageGraph.edges());
 }
 
 main();

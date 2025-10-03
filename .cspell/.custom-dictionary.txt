@@ -1,10 +1,12 @@
 antv
 cookiejar
+defval
 elep
 exceljs
 graphlib
 isquiring
 jsondiffpatch
+noauth
 procs
 Quiting
 unmaximize

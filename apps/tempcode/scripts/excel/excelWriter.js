@@ -1,5 +1,5 @@
-const ExcelJS = require("exceljs");
-const fs = require("fs");
+const ExcelJS = require('exceljs');
+const fs = require('fs');
 
 class ExcelWriter {
   constructor() {
@@ -31,7 +31,7 @@ class ExcelWriter {
   addSheets(sheets = []) {
     for (const sheetConfig of sheets) {
       const { name, data, columns } = sheetConfig;
-      const sheetName = name || "Sheet";
+      const sheetName = name || 'Sheet';
 
       // 删除旧的同名 Sheet
       const existingSheet = this.workbook.getWorksheet(sheetName);
@@ -60,7 +60,7 @@ class ExcelWriter {
       if (filterEnabled && ws.columns.length > 0) {
         const endCol = String.fromCharCode(64 + ws.columns.length);
         ws.autoFilter = {
-          from: "A1",
+          from: 'A1',
           to: `${endCol}1`,
         };
       }
@@ -70,19 +70,17 @@ class ExcelWriter {
       finalColumns.forEach((col, colIndex) => {
         const cell = headerRow.getCell(colIndex + 1);
         cell.font = {
-          color: col.headerFontColor
-            ? { argb: col.headerFontColor }
-            : undefined,
+          color: col.headerFontColor ? { argb: col.headerFontColor } : undefined,
           bold: true,
         };
         if (col.headerBgColor) {
           cell.fill = {
-            type: "pattern",
-            pattern: "solid",
+            type: 'pattern',
+            pattern: 'solid',
             fgColor: { argb: col.headerBgColor },
           };
         }
-        cell.alignment = { vertical: "middle", horizontal: "center" };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
       });
       headerRow.commit();
 
@@ -93,23 +91,19 @@ class ExcelWriter {
           const cell = row.getCell(colIdx + 1);
           const rawValue = item[col.key];
 
-          if (!col.highlightKeywords || typeof rawValue !== "string") {
+          if (!col.highlightKeywords || typeof rawValue !== 'string') {
             cell.value = rawValue;
           } else {
             // 关键词高亮
-            const rich = this._splitTextWithKeywords(
-              rawValue,
-              col.keywords || [],
-              {
-                color: col.fontColor || "FF0000",
-                bold: col.fontBold || false,
-              }
-            );
+            const rich = this._splitTextWithKeywords(rawValue, col.keywords || [], {
+              color: col.fontColor || 'FF0000',
+              bold: col.fontBold || false,
+            });
             cell.value = { richText: rich };
           }
 
           // 样式统一设置
-          cell.alignment = { wrapText: true, vertical: "top" };
+          cell.alignment = { wrapText: true, vertical: 'top' };
         });
         row.commit();
       });
@@ -126,7 +120,7 @@ class ExcelWriter {
   _splitTextWithKeywords(text, keywords, style) {
     if (!keywords || keywords.length === 0) return [{ text }];
 
-    const regex = new RegExp(`(${keywords.join("|")})`, "gi");
+    const regex = new RegExp(`(${keywords.join('|')})`, 'gi');
     const segments = text.split(regex);
 
     return segments.map((seg) => {

@@ -1,4 +1,3 @@
-// eslint.config.js
 import { defineConfig } from 'eslint/config'
 import js from '@eslint/js'
 import tseslint from 'typescript-eslint'
@@ -75,13 +74,11 @@ export default defineConfig([
     ],
     rules: {
       "@typescript-eslint/no-require-imports": "off",
-      '@typescript-eslint/no-unused-expressions': [
-    'error',
-    {
-      allowShortCircuit: true,   // 允许 a && b()
-      allowTernary: true,        // 允许 a ? b() : c()
-      allowTaggedTemplates: true // 允许标签模板
-    }
+      '@typescript-eslint/no-unused-expressions': ['error',{
+  allowShortCircuit: true,   // 允许 a && b()
+  allowTernary: true,        // 允许 a ? b() : c()
+  allowTaggedTemplates: true // 允许标签模板
+}
   ]
       // 这里可以放你的 Vue 规则
     }

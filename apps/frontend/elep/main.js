@@ -1,70 +1,24 @@
 /* eslint-disable no-undef */
 const { app, BrowserWindow, ipcMain, globalShortcut, Menu } = require('electron');
-
 const path = require('node:path');
-
+const { registerAllIpc, ipcHandle } = require('./electron/ipc/index');
+const spotlight = require('./plugins/chrome/bookmarks');
+const spotlightRouter = require('./services/spotlight');
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
-const { registerAllIpc, ipcHandle } = require('./electron/ipc/index');
-
 let win = null;
+let spotlightWin = null;
+let isQuiting = false;
 // 检查是否已存在实例
 const gotTheLock = app.requestSingleInstanceLock();
 
-if (!gotTheLock) {
-  // 已经有一个实例在运行，退出当前进程
-  app.quit();
-} else {
-  // 监听 second-instance 事件（第二次启动时触发）
-  app.on('second-instance', (event, argv, workingDirectory) => {
-    console.log(event, argv, workingDirectory);
-    if (win) {
-      if (win.isMinimized()) win.restore();
-      win.focus();
-    }
-  });
-
-  // 创建窗口
-  app.whenReady().then(() => {
-    registerAllIpc(ipcMain);
-    createWindow();
-    app.on('activate', () => {
-      if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow();
-      }
-    });
-    createSpotlight();
-
-    const ok = globalShortcut.register('CommandOrControl+Option+P', () => {
-      console.log('✅ 快捷键触发成功');
-      if (spotlightWin.isVisible()) {
-        spotlightWin.hide();
-      } else {
-        spotlightWin.center();
-        spotlightWin.show();
-        spotlightWin.focus();
-        spotlightWin.webContents.send('focus-input');
-      }
-    });
-
-    if (!ok) {
-      console.log('❌ 快捷键注册失败');
-    }
-  });
-}
-// 所有窗口关闭时退出（可选，如果你希望退出应用时）
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
-});
-let spotlightWin = null;
-
-let isQuiting = false;
 function createSpotlight() {
   spotlightWin = new BrowserWindow({
     width: 624,
-    height: 64, // 初始高度最小化
-    frame: false,
-    transparent: true,
+    height: 70, // 初始高度最小化
+    frame: false, // 去掉原生边框
+    autoHideMenuBar: true, // 隐藏菜单栏
+    transparent: false, // 不设置透明（否则可能失效）
     alwaysOnTop: true,
     resizable: false,
     movable: false,
@@ -88,6 +42,7 @@ function createSpotlight() {
   } else {
     spotlightWin.loadFile(path.join(__dirname, '/pages/index.html'), { hash: 'spotlight' });
   }
+  // spotlightWin.webContents.openDevTools();
 }
 function createMenu() {
   const template = [
@@ -125,14 +80,14 @@ function createWindow() {
     width: 1200,
     height: 800,
     // frame: false, // 去掉原生边框
-    // autoHideMenuBar: true, // 隐藏菜单栏
+    autoHideMenuBar: true, // 隐藏菜单栏
     transparent: false, // 不设置透明（否则可能失效）
     roundedCorners: true,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
-      preload: path.join(__dirname, 'preload.js'), // use a preload script
+      preload: path.join(__dirname, 'preload.js'),
     },
     icon: iconPath,
   });
@@ -173,27 +128,55 @@ function createWindow() {
   });
 }
 
+if (!gotTheLock) {
+  // 已经有一个实例在运行，退出当前进程
+  app.quit();
+} else {
+  // 监听 second-instance 事件（第二次启动时触发）
+  app.on('second-instance', (event, argv, workingDirectory) => {
+    console.log(event, argv, workingDirectory);
+    if (win) {
+      if (win.isMinimized()) win.restore();
+      win.focus();
+    }
+  });
+
+  // 创建窗口
+  app.whenReady().then(async () => {
+    registerAllIpc(ipcMain);
+    createWindow();
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+      }
+    });
+    createSpotlight();
+    await spotlight.init();
+
+    const ok = globalShortcut.register('CommandOrControl+Option+P', () => {
+      console.log('✅ 快捷键触发成功');
+      if (spotlightWin.isVisible()) {
+        spotlightWin.hide();
+      } else {
+        spotlightWin.center();
+        spotlightWin.show();
+        spotlightWin.focus();
+        spotlightWin.webContents.send('focus-input');
+      }
+    });
+
+    if (!ok) {
+      console.log('❌ 快捷键注册失败');
+    }
+  });
+}
+// 所有窗口关闭时退出（可选，如果你希望退出应用时）
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') app.quit();
+});
+
 app.on('before-quit', () => {
-  // isquiring = true
-});
-
-ipcMain.handle('refresh-window', () => {
-  win.reload();
-});
-// ipcRenderer.invoke 处理
-ipcMain.handle('toMain', async (e, args) => {
-  return await ipcHandle(e, args);
-});
-
-// ipcRenderer.on 处理
-ipcMain.on('toMain', async (e, args) => {
-  if (!args || !args.event) {
-    return;
-  }
-  const data = await ipcHandle(e, args);
-  const webContents = e.sender;
-  const win = BrowserWindow.fromWebContents(webContents);
-  win.webContents.send('fromMain', { event: args.event, data: data });
+  isQuiting = true;
 });
 
 app.on('window-all-closed', () => {
@@ -212,10 +195,64 @@ app.on('activate', () => {
   }
 });
 
-ipcMain.on('spotlight-cmd', (e, cmd) => {
+ipcMain.handle('refresh-window', () => {
+  win.reload();
+});
+
+ipcMain.handle('toMain', async (e, args) => {
+  return await ipcHandle(e, args);
+});
+
+ipcMain.handle('bookmarks:listProfiles', async () => {
+  return await spotlight.listProfiles();
+});
+
+// IPC：读取某个 Profile 的书签树
+ipcMain.handle('bookmarks:load', async (_evt, profileName) => {
+  return await spotlight.loadBookmarksTree(profileName);
+});
+
+// ipcRenderer.on 处理
+ipcMain.on('toMain', async (e, args) => {
+  if (!args || !args.event) {
+    return;
+  }
+  const data = await ipcHandle(e, args);
+  const webContents = e.sender;
+  const win = BrowserWindow.fromWebContents(webContents);
+  win.webContents.send('fromMain', { event: args.event, data: data });
+});
+
+ipcMain.on('spotlight-cmd', (e, type, cmd) => {
+  console.log('spotlight-cmd', type, cmd);
   if (!win) return;
 
-  win.webContents.send('navigate', cmd);
+  if (type == 'local_route') {
+    win.webContents.send('navigate', cmd);
+  } else if (type == 'local_sys') {
+    if (cmd == 'quit') {
+      app.quit();
+    }
+  }
+});
+
+ipcMain.handle('spotlight:search', async (_evt, inputText) => {
+  const r = await spotlight.search(inputText);
+  return r;
+});
+
+ipcMain.handle('spotlight:query', async (_e, text) => {
+  return await spotlightRouter.query(text); // 必须 return
+});
+
+ipcMain.handle('spotlight:open', async (_evt, item) => {
+  // return await spotlight.open(item);
+  return await spotlightRouter.open(item); // 必须 return
+});
+
+ipcMain.handle('spotlight:refresh', async () => {
+  await spotlight.init(true);
+  return true;
 });
 
 ipcMain.on('spotlight-hide', () => {

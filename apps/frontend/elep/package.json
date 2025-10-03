@@ -8,7 +8,6 @@
   "version": "0.0.1",
   "private": true,
   "main": "main.js",
-  "type": "module",
   "scripts": {
     "build": "run-p type-check \"build-only {@}\" --",
     "release": "electron-builder --dir --mac --arm64",

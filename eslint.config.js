@@ -28,8 +28,12 @@ export default defineConfig([
       parser: tseslint.parser,
     },
     rules: {
+      '@typescript-eslint/no-require-imports': 'off',
       'no-var': 'error',
       'prettier/prettier': 'warn',
+    },
+    globals: {
+      console: 'readonly',
     },
   },
 
@@ -50,7 +54,6 @@ export default defineConfig([
         ...globals.browser,
         // 若前端代码里用到了 process.env，声明为只读即可避免 no-undef
         process: 'readonly',
-        console: 'readonly',
         __dirname: 'readonly',
         __filename: 'readonly',
       },
@@ -60,7 +63,6 @@ export default defineConfig([
     },
     extends: [...vuePlugin.configs['flat/recommended'], eslintConfigPrettier],
     rules: {
-      '@typescript-eslint/no-require-imports': 'off',
       '@typescript-eslint/no-unused-expressions': [
         'error',
         {
@@ -87,7 +89,6 @@ export default defineConfig([
       parser: tseslint.parser,
     },
     rules: {
-      '@typescript-eslint/no-require-imports': 'off',
       // 这里可以加 Node 端特定规则
     },
   },

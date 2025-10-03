@@ -13,7 +13,8 @@ const router = createRouter({
           path: '',
           name: 'home',
           // component: () => import('../views/HomeView.vue'),
-          component: () => import('../views/ObjectToJsonView.vue'),
+          // component: () => import('../views/ObjectToJsonView.vue'),
+          component: () => import('../views/BookmarkView.vue'),
 
           // component: () => import('../views/test4.vue'),
           // component: () => import('../views/TableAssets.vue'),

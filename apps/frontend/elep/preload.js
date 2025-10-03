@@ -122,5 +122,18 @@ contextBridge.exposeInMainWorld('spotlightApi', {
   onFocusInput: (callback) => ipcRenderer.on('focus-input', callback),
   resizeWindow: (h) => ipcRenderer.send('spotlight-resize', { h }),
   hide: () => ipcRenderer.send('spotlight-hide'),
-  executeCommand: (cmd) => ipcRenderer.send('spotlight-cmd', cmd),
+  executeCommand: (type, cmd) => ipcRenderer.send('spotlight-cmd', type, cmd),
+  search: async (inputText) => {
+    const r = await ipcRenderer.invoke('spotlight:search', inputText);
+    return r;
+  },
+  open: (item) => ipcRenderer.invoke('spotlight:open', item),
+  refresh: () => ipcRenderer.invoke('spotlight:refresh'),
+  query: async (text) => await ipcRenderer.invoke('spotlight:query', text),
+});
+
+contextBridge.exposeInMainWorld('bookmarksApi', {
+  listProfiles: () => ipcRenderer.invoke('bookmarks:listProfiles'),
+  load: (profileName) => ipcRenderer.invoke('bookmarks:load', profileName),
+  openExternal: (url) => ipcRenderer.invoke('bookmarks:openExternal', url),
 });

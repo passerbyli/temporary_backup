@@ -3,13 +3,13 @@
 // @see: https://cz-git.qbenben.com/zh/guide
 // const fs = require('fs');
 // const path = require('path');
-import fs from 'fs';
-import path from 'path';
+// import fs from 'fs';
+// import path from 'path';
 
-const scopes = fs
-  .readdirSync(path.resolve(__dirname, 'src'), { withFileTypes: true })
-  .filter((dirent) => dirent.isDirectory())
-  .map((dirent) => dirent.name.replace(/s$/, ''));
+// const scopes = fs
+//   .readdirSync(path.resolve(__dirname, 'src'), { withFileTypes: true })
+//   .filter((dirent) => dirent.isDirectory())
+//   .map((dirent) => dirent.name.replace(/s$/, ''));
 export default {
   /* 一个字符串数组，用于指定对应的 commitlint 配置扩展文件（使用了 “@commitlint/config-conventional” 扩展，它是一个常用的提交消息规范） */
   extends: ['@commitlint/config-conventional'],
@@ -125,8 +125,8 @@ export default {
     // 提示信息中使用表情符号
     useEmoji: true,
     // 指定文件作用域
-    // scopes: [{ name: 'components' }, { name: 'utils' }, { name: 'backend' }, { name: 'frontend' }, { name: 'root' }],
-    scopes: [...scopes],
+    scopes: [{ name: 'components' }, { name: 'utils' }, { name: 'backend' }, { name: 'frontend' }, { name: 'root' }],
+    // scopes: [...scopes],
     // 指定自定义范围在提示信息中的对齐方式
     customScopesAlign: 'bottom',
     // 为空范围指定一个别名

@@ -55,12 +55,24 @@ const renderList = computed(() => {
 });
 
 /** 中间省略：把长串压成 head + … + tail */
-function middleEllipsis(str = '', max = 60) {
+function middleEllipsis(str = '', max = 68) {
   const s = String(str);
   if (s.length <= max) return s;
   const keep = Math.max(1, Math.floor((max - 1) / 2));
   return s.slice(0, keep) + '…' + s.slice(-keep);
 }
+const MiniBtn = (label, onClick) =>
+  h(
+    'button',
+    {
+      class: 'mini-btn',
+      onClick: (e) => {
+        e.stopPropagation();
+        onClick(e);
+      },
+    },
+    label,
+  );
 
 /** LocalItem：单行 */
 const LocalItem = (props) =>
@@ -111,8 +123,34 @@ const GitHubItem = (props) => {
     h('div', { class: 'gh-desc', title: desc }, desc),
   ]);
 };
+/** FileItem：两行（文件名 + 路径中间省略）+ 右侧小按钮 */
+const FileItem = (props) => {
+  const title = props.item.title || '';
+  const full = props.item.subtitle || ''; // fullPath
+  return h('div', { class: 'fi' }, [
+    h('div', { class: 'fi-top' }, [
+      h('span', { class: 'fi-icon' }, '📄'),
+      h('span', { class: 'fi-title', title }, title),
+      h('span', { class: 'fi-actions' }, [
+        MiniBtn('打开', () => window.spotlightApi.open({ ...props.item, action: 'open' })),
+        MiniBtn('位置', () => window.spotlightApi.open({ ...props.item, action: 'reveal' })),
+      ]),
+    ]),
+    h('div', { class: 'fi-path', title: full }, middleEllipsis(full, 80)),
+  ]);
+};
 
-const componentMap = { LocalItem, SearchItem, BookmarkItem, GitHubItem };
+const CmdItem = (props) =>
+  h('div', { class: 'cmd' }, [
+    h('div', { class: 'cmd-title', title: props.item.title }, ['⚡ ', props.item.title]),
+    h('div', { class: 'cmd-actions' }, [
+      MiniBtn('运行', () => window.spotlightApi.open({ ...props.item, action: 'run' })),
+      MiniBtn('终端', () => window.spotlightApi.open({ ...props.item, action: 'terminal' })),
+      MiniBtn('复制', () => window.spotlightApi.open({ ...props.item, action: 'copy' })),
+    ]),
+  ]);
+
+const componentMap = { LocalItem, SearchItem, BookmarkItem, GitHubItem, FileItem, CmdItem };
 function componentFor(item) {
   return componentMap[item.view] || LocalItem;
 }
@@ -132,7 +170,17 @@ async function run(item) {
 
 function execute() {
   if (!renderList.value.length) return;
-  run(renderList.value[selected.value]);
+  const it = renderList.value[selected.value];
+
+  // CmdItem：回车默认打开终端
+  if (it.view === 'CmdItem') {
+    window.spotlightApi.open({ ...it, action: 'terminal' });
+    window.spotlightApi.hide();
+    return;
+  }
+
+  // 其他类型沿用原逻辑
+  run(it);
 }
 
 // —— 输入监听：有 keyword+空格 则走远端查询；否则 local 模式 —— //
@@ -411,5 +459,88 @@ onMounted(() => {
   line-height: 20px;
   padding: 6px 0;
   overflow: hidden;
+}
+/* —— FileItem —— */
+.fi {
+  display: grid;
+  grid-template-rows: 1fr 1fr; /* 两行 */
+  width: 100%;
+  min-width: 0;
+  row-gap: 0;
+}
+
+.fi-top {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto; /* 图标 | 标题 | 按钮区 */
+  column-gap: 6px;
+  align-items: center;
+  line-height: 18px;
+  min-width: 0;
+}
+
+.fi-icon {
+  text-align: center;
+  opacity: 0.9;
+}
+
+.fi-title {
+  font-weight: 600;
+  color: #111;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.fi-actions {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.mini-btn {
+  font-size: 11px;
+  padding: 0 6px;
+  line-height: 16px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #374151;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.mini-btn:hover {
+  background: #f3f4f6;
+}
+
+.fi-path {
+  line-height: 18px;
+  color: #6b7280;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: clip; /* 我们自己做中间省略 */
+}
+
+/* CmdItem：单行，左右分栏 */
+.cmd {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto; /* 标题 | 按钮组 */
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  column-gap: 8px;
+}
+.cmd-title {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-weight: 600;
+  color: #111;
+}
+.cmd-actions {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
 }
 </style>

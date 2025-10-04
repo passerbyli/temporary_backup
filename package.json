@@ -5,6 +5,7 @@
   "types": "module",
   "main": "index.js",
   "scripts": {
+    "dev":"bash ./install.sh --env=dev",
     "prettier": "prettier --write \"**/*.{ts,tsx,js,jsx,mjs,cjs,css,less,scss,vue,html,md}\"",
     "eslint": "eslint",
     "spellcheck": "cspell lint \"(packages|apps)/**/*.{ts,tsx,js,jsx,mjs,cjs,css,less,scss,vue,html,md}\"",

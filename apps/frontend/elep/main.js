@@ -1,17 +1,65 @@
 /* eslint-disable no-undef */
-const { app, BrowserWindow, ipcMain, globalShortcut, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, globalShortcut, Menu, Tray, nativeImage } = require('electron');
 const path = require('node:path');
 const { registerAllIpc, ipcHandle } = require('./electron/ipc/index');
 const spotlight = require('./plugins/chrome/bookmarks');
 const spotlightRouter = require('./services/spotlight');
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
-
+const isMac = process.platform === 'darwin';
 let win = null;
+let tray; // ← 保持引用
 let spotlightWin = null;
 let isQuiting = false;
 // 检查是否已存在实例
 const gotTheLock = app.requestSingleInstanceLock();
 
+function getIconPath() {
+  // 开发环境和打包后路径不同
+  const iconFile = process.platform === 'win32' ? '512x512.png' : '512x512.png';
+  return app.isPackaged
+    ? path.join(process.resourcesPath, iconFile) // 打包后放 resources 旁
+    : path.join(__dirname, 'public/icons/', iconFile); // 开发环境 ./assets/icon.ico
+}
+function createTray() {
+  const icon = nativeImage.createFromPath(getIconPath());
+  tray = new Tray(icon);
+
+  tray.setToolTip('你的应用名');
+
+  const trayMenu = Menu.buildFromTemplate([
+    {
+      label: '显示/隐藏',
+      click: () => {
+        if (!win) return;
+        if (win.isVisible()) win.hide();
+        else {
+          win.show();
+          win.focus();
+        }
+      },
+    },
+    { type: 'separator' },
+    { label: '关于', click: () => console.log('关于被点击') },
+    { type: 'separator' },
+    {
+      label: '退出',
+      click: () => {
+        app.quit();
+      },
+    },
+  ]);
+  tray.setContextMenu(trayMenu);
+
+  // 左键单击：切换显示
+  tray.on('click', () => {
+    if (!win) return;
+    if (win.isVisible()) win.hide();
+    else {
+      win.show();
+      win.focus();
+    }
+  });
+}
 function createSpotlight() {
   spotlightWin = new BrowserWindow({
     width: 624,
@@ -49,29 +97,20 @@ function createMenu() {
     {
       label: '菜单一',
       submenu: [
-        {
-          label: '功能一',
-        },
-        {
-          label: '功能二',
-        },
-      ],
-    },
-    {
-      label: '菜单二',
-      submenu: [
-        {
-          label: '功能一',
-        },
-        {
-          label: '功能二',
-        },
-        { role: 'quit' },
+        { label: '功能一', click: () => console.log('功能一') },
+        { label: '功能二', click: () => console.log('功能二') },
+        { type: 'separator' },
+        { role: 'quit', label: '退出' },
       ],
     },
   ];
   const menu = Menu.buildFromTemplate(template);
+  // 应用级菜单（macOS 显示在系统菜单栏，Windows 显示在窗口上方）
   Menu.setApplicationMenu(menu);
+  // 保险起见，也绑到当前窗口（Windows 上更稳）
+  win.setMenu(menu);
+  win.setAutoHideMenuBar(false);
+  win.setMenuBarVisibility(true);
 }
 function createWindow() {
   const iconPath = path.join(__dirname, 'public/icons/512x512.png');
@@ -79,8 +118,9 @@ function createWindow() {
   win = new BrowserWindow({
     width: 1200,
     height: 800,
-    // frame: false, // 去掉原生边框
-    autoHideMenuBar: true, // 隐藏菜单栏
+    // frame: true, // 确保有原生边框时，菜单栏才可见
+    // Windows 要显示菜单栏，别用 frame:false；且不要 autoHide
+    autoHideMenuBar: false, // 显示菜单栏
     transparent: false, // 不设置透明（否则可能失效）
     roundedCorners: true,
     webPreferences: {
@@ -145,6 +185,9 @@ if (!gotTheLock) {
   app.whenReady().then(async () => {
     registerAllIpc(ipcMain);
     createWindow();
+    if (process.platform === 'win32') {
+      createTray(); // 仅 Windows 托盘
+    }
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {
         createWindow();
@@ -152,8 +195,9 @@ if (!gotTheLock) {
     });
     createSpotlight();
     await spotlight.init();
+    const accelerator = isMac ? 'CommandOrControl+Option+P' : 'CommandOrControl+Alt+P';
 
-    const ok = globalShortcut.register('CommandOrControl+Option+P', () => {
+    const ok = globalShortcut.register(accelerator, () => {
       console.log('✅ 快捷键触发成功');
       if (spotlightWin.isVisible()) {
         spotlightWin.hide();

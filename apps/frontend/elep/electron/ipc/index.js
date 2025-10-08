@@ -33,6 +33,8 @@ async function ipcHandle(e, args) {
     };
   } else if (event === 'kg') {
     data = await queryKg(params);
+  } else if (event == 'getDataSources') {
+    data = await queryDataSource();
   }
   return data;
 }

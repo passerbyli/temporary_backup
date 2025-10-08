@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev":"bash ./install.sh --env=dev",
+    "dev": "bash ./install.sh --env=dev",
     "prettier": "prettier --write \"**/*.{ts,tsx,js,jsx,mjs,cjs,css,less,scss,vue,html,md}\"",
     "eslint": "eslint",
     "spellcheck": "cspell lint \"(packages|apps)/**/*.{ts,tsx,js,jsx,mjs,cjs,css,less,scss,vue,html,md}\"",
@@ -23,7 +23,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.12.4",
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=18.0.0 <20.0.0",
     "npm": ">=9.0.0",
     "pnpm": ">=7.0.0"
   },

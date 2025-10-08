@@ -3,7 +3,6 @@ const bookmarksProvider = require('./providers/bookmarks'); // ch
 const githubProvider = require('./providers/github'); // gh
 const filesProvider = require('./providers/files'); // fs
 const cmdProvider = require('./providers/cmd'); // cmd
-// TODO: const docsProvider = require('./providers/docs');     // md
 
 /** 注册表：keyword -> provider */
 const registry = {
@@ -11,7 +10,6 @@ const registry = {
   gh: githubProvider,
   fs: filesProvider,
   cmd: cmdProvider,
-  // md: docsProvider,
 };
 
 /** 解析输入，返回 { keyword, content } 或 null（非 provider 模式） */

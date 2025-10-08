@@ -7,7 +7,6 @@
     "start": "node ./bin/www",
     "dev": "nodemon ./main"
   },
-  "type": "module",
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -20,6 +19,7 @@
     "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.0.0",
     "node-dev": "^8.0.0"
   }
 }

@@ -12,6 +12,7 @@ let spotlightWin = null;
 let isQuiting = false;
 // 检查是否已存在实例
 const gotTheLock = app.requestSingleInstanceLock();
+const accelerator = isMac ? 'CommandOrControl+Option+P' : 'CommandOrControl+Alt+P';
 
 function getIconPath() {
   // 开发环境和打包后路径不同
@@ -195,7 +196,6 @@ if (!gotTheLock) {
     });
     createSpotlight();
     await spotlight.init();
-    const accelerator = isMac ? 'CommandOrControl+Option+P' : 'CommandOrControl+Alt+P';
 
     const ok = globalShortcut.register(accelerator, () => {
       console.log('✅ 快捷键触发成功');
@@ -217,6 +217,11 @@ if (!gotTheLock) {
 // 所有窗口关闭时退出（可选，如果你希望退出应用时）
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
+});
+// 当我们注册了全局快捷键之后，当应用程序退出的时候，也需要注销这个快捷键
+app.on('will-quit', function () {
+  globalShortcut.unregister(accelerator);
+  globalShortcut.unregisterAll();
 });
 
 app.on('before-quit', () => {

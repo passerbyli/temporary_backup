@@ -1,6 +1,7 @@
 const constants = require('../constants');
 const { getConfig } = require('../db/configDb');
 const myAxios = require('./myAxios');
+const consoleUtil = require('./consoleLogUtil.js');
 
 async function getVersion() {
   const res = await myAxios.get(constants.API.checkVersion);
@@ -11,25 +12,26 @@ async function queryKg(params) {
   let config = getConfig();
   let auth = config.global.auth;
 
-  url = 'http://127.0.0.1:8081/test/g6/resolve';
+  let url = 'http://127.0.0.1:8081/test/g6/resolve';
 
-  url = `http://127.0.0.1:8081/api/neo4j/lineage/trace?tableId=${params.tableId}&level=${params.level}&direction=${params.direction}`;
-  console.log('queryKg', url, params);
+  // url = `http://127.0.0.1:8081/api/neo4j/lineage/trace?tableId=${params.tableId}&level=${params.level}&direction=${params.direction}`;
+  console.log('params', params);
+  console.log('aaa_KG2', url);
   return myAxios
-    .get(
+    .post(
       `${url}`,
       {
-        // tableId: params.id,
-        // level: parseInt(params.level),
-        // direction: params.direction
-        // closed: params.closed,
-        // nodeFilter: {
-        //   // layer: ['ods', 'ads'],
-        //   layer: ['dim']
-        // },
-        // relFilter: {
-        //   // sqlName: ['sql_10', 'sql_debug'],
-        // }
+        tableId: params.tableId,
+        level: parseInt(params.level),
+        direction: params.direction,
+        closed: params.closed,
+        nodeFilter: {
+          // layer: ['ods', 'ads'],
+          layer: ['dim'],
+        },
+        relFilter: {
+          // sqlName: ['sql_10', 'sql_debug'],
+        },
       },
       {
         headers: {

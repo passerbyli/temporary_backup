@@ -151,7 +151,6 @@ function replaceParams(sql, params) {
 }
 
 async function loadGraphData() {
-  console.log(props);
   let params = {
     tableId: props.id,
     name: props.name,
@@ -174,7 +173,7 @@ async function loadGraphData() {
           nodes: [],
           edges: response.edges,
         };
-        response.nodes.forEach((item) => {
+        response?.nodes?.forEach((item) => {
           let node = {
             id: item.id,
             label: item.label,

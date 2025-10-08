@@ -1,7 +1,6 @@
 const path = require('path');
 const fs = require('fs');
 const { parseSql } = require('./sqlParse1');
-// const { parseSql } = require('./sqlParseAst')
 
 /**
  * 获取所有SQL文件
@@ -76,4 +75,4 @@ async function main(filePath, outputPath) {
   return { result: result, filePath: _outputPath };
 }
 
-main('/Users/lihaomin/projects/GitHub/test/scripts/sqlParse/data', path.join(__dirname));
+main('/Users/lihaomin/projects/GitHub/temporary_backup/apps/frontend/elep/plugins/sqlParse/sql', path.join(__dirname));

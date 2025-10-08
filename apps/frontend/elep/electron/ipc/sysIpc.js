@@ -37,7 +37,6 @@ function registerAuthIpc(ipcMain) {
 
   ipcMain.handle('plugin:launch-chrome', async () => {
     let pluginPath = path.join(__dirname, 'chrome/my-extensiondebug');
-    pluginPath = '/Users/lihaomin/projects/GitHub/test/chrome/my-extensiondebug';
     const guidePath = path.join(__dirname, './public/plugin-guide.html');
     openChromeWithPlugin(pluginPath, guidePath);
     return 'done';

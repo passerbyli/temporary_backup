@@ -12,23 +12,7 @@ const router = createRouter({
         {
           path: '',
           name: 'home',
-          // component: () => import('../views/HomeView.vue'),
-          // component: () => import('../views/ObjectToJsonView.vue'),
-          component: () => import('../views/BookmarkView.vue'),
-
-          // component: () => import('../views/test4.vue'),
-          // component: () => import('../views/TableAssets.vue'),
-          // component: () => import('../views/LogView.vue'),
-          // component: () => import('../views/test5.vue'),
-          // component: () => import('../views/ExportSqlPage.vue'),
-          // component: () => import('../views/ExportSqlPage.vue'),
-          // component: () => import('../views/ExportSqlPage.vue'),
-          // component: () => import('../views/ExportSqlPage.vue'),
-          // component: () => import('../views/ExportSqlPage.vue'),
-          // component: () => import('../views/PluginToggle.vue'),
-          // component: () => import('../views/InterfaceList.vue'),
-          // component: () => import('../views/style.vue'),
-          // component: () => import('../views/test6.vue'),
+          component: () => import('../views/HomeView.vue'),
 
           meta: {
             display: true,
@@ -162,15 +146,6 @@ const router = createRouter({
           },
           children: [
             {
-              path: '/test0',
-              name: 'test0',
-              component: () => import('../views/HomeView.vue'),
-              meta: {
-                display: true,
-                title: 'test0',
-              },
-            },
-            {
               path: '/test1',
               name: 'test1',
               component: () => import('../views/test1.vue'),
@@ -190,7 +165,7 @@ const router = createRouter({
             {
               path: '/test3',
               name: 'test3',
-              component: () => import('../views/HomeView.vue'),
+              component: () => import('../views/test3.vue'),
               meta: {
                 display: true,
                 title: 'test3',
@@ -199,7 +174,7 @@ const router = createRouter({
             {
               path: '/test4',
               name: 'test4',
-              component: () => import('../views/HomeView.vue'),
+              component: () => import('../views/test4.vue'),
               meta: {
                 display: true,
                 title: 'test4',
@@ -208,7 +183,7 @@ const router = createRouter({
             {
               path: '/test5',
               name: 'test5',
-              component: () => import('../views/HomeView.vue'),
+              component: () => import('../views/test5.vue'),
               meta: {
                 display: true,
                 title: 'test5',
@@ -217,33 +192,87 @@ const router = createRouter({
             {
               path: '/test6',
               name: 'test6',
-              component: () => import('../views/HomeView.vue'),
+              component: () => import('../views/test6.vue'),
               meta: {
                 display: true,
                 title: 'test6',
               },
             },
+          ],
+        },
+        {
+          path: '/other',
+          name: 'other',
+          meta: {
+            display: true,
+            title: 'other',
+          },
+          children: [
             {
-              path: '/test7',
-              name: 'test7',
-              component: () => import('../views/HomeView.vue'),
+              path: '/ObjectToJsonView',
+              name: 'ObjectToJsonView',
+              component: () => import('../views/ObjectToJsonView.vue'),
               meta: {
                 display: true,
-                title: 'test7',
+                title: 'ObjectToJsonView',
               },
             },
             {
-              path: '/test8',
-              name: 'test8',
-              component: () => import('../views/HomeView.vue'),
+              path: '/BookmarkView',
+              name: 'BookmarkView',
+              component: () => import('../views/BookmarkView.vue'),
               meta: {
                 display: true,
-                title: 'test8',
+                title: 'BookmarkView',
+              },
+            },
+            {
+              path: '/ExportSqlPage',
+              name: 'ExportSqlPage',
+              component: () => import('../views/ExportSqlPage.vue'),
+              meta: {
+                display: true,
+                title: 'ExportSqlPage',
+              },
+            },
+            {
+              path: '/Diff',
+              name: 'Diff',
+              component: () => import('../views/Diff.vue'),
+              meta: {
+                display: true,
+                title: 'Diff',
+              },
+            },
+            {
+              path: '/DiffText',
+              name: 'DiffText',
+              component: () => import('../views/DiffText.vue'),
+              meta: {
+                display: true,
+                title: 'DiffText',
+              },
+            },
+            {
+              path: '/style',
+              name: 'style',
+              component: () => import('../views/style.vue'),
+              meta: {
+                display: true,
+                title: 'style',
+              },
+            },
+            {
+              path: '/SideBySideDiff',
+              name: 'SideBySideDiff',
+              component: () => import('../views/SideBySideDiff.vue'),
+              meta: {
+                display: true,
+                title: 'SideBySideDiff',
               },
             },
           ],
         },
-
         {
           path: '/about',
           name: 'about',

@@ -1,4 +1,6 @@
-// pluginManager.js
+/**
+ * 插件管理模块
+ */
 const path = require('path');
 const { session } = require('electron');
 

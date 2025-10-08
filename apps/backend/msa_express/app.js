@@ -3,7 +3,6 @@ const session = require('express-session');
 const fs = require('fs');
 const url = require('url');
 const bodyParser = require('body-parser');
-const faker = require('faker');
 const cors = require('cors');
 
 const app = express();
@@ -36,15 +35,15 @@ const mockDb = [];
 for (let i = 1; i <= 100; i++) {
   mockDb.push({
     id: i,
-    name: faker.name.findName(),
-    url: faker.internet.url(),
-    avatar: faker.image.avatar(),
-    intro: faker.lorem.sentence(),
-    tags: faker.random.words(3).split(' '),
-    extra: {
-      age: faker.datatype.number({ min: 18, max: 60 }),
-      active: faker.datatype.boolean(),
-    },
+    // name: faker.name.findName(),
+    // url: faker.internet.url(),
+    // avatar: faker.image.avatar(),
+    // intro: faker.lorem.sentence(),
+    // tags: faker.random.words(3).split(' '),
+    // extra: {
+    //   age: faker.datatype.number({ min: 18, max: 60 }),
+    //   active: faker.datatype.boolean(),
+    // },
   });
 }
 

@@ -1,0 +1,81 @@
+[
+  {
+    "file": "/Users/lihaomin/projects/GitHub/temporary_backup/apps/frontend/elep/plugins/sqlParse/sql/example.sql",
+    "scriptIndex": 1,
+    "databaseType": "Oracle",
+    "procedures": [],
+    "functionNames": [],
+    "sourceTables": [
+      {
+        "schema": "ods",
+        "table": "orders",
+        "isTemporary": false
+      },
+      {
+        "schema": "public",
+        "table": "tmp",
+        "isTemporary": true
+      }
+    ],
+    "targetTables": [
+      {
+        "schema": "dwd",
+        "table": "user_orders",
+        "isTemporary": false
+      }
+    ],
+    "nodes": [
+      {
+        "id": "table:ods.orders",
+        "label": "orders",
+        "type": "table",
+        "isTemporary": false,
+        "style": {
+          "fill": "#87CEFA"
+        }
+      },
+      {
+        "id": "table:public.tmp",
+        "label": "tmp",
+        "type": "table",
+        "isTemporary": true,
+        "style": {
+          "fill": "#FFD700"
+        }
+      },
+      {
+        "id": "table:dwd.user_orders",
+        "label": "user_orders",
+        "type": "table",
+        "isTemporary": false,
+        "style": {
+          "fill": "#87CEFA"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "table:ods.orders",
+        "target": "table:dwd.user_orders",
+        "label": "TRANSFORM"
+      },
+      {
+        "source": "table:public.tmp",
+        "target": "table:dwd.user_orders",
+        "label": "TRANSFORM"
+      }
+    ],
+    "columnEdges": [
+      {
+        "source": "tmp.undefined.user_id",
+        "target": "dwd.user_orders.user_id",
+        "label": "FIELD_MAP"
+      },
+      {
+        "source": "tmp.undefined.total_amt",
+        "target": "dwd.user_orders.total_amount",
+        "label": "FIELD_MAP"
+      }
+    ]
+  }
+]

@@ -111,7 +111,7 @@ public class Neo4jLineageQueryController {
             finalCypher.append(" RETURN p LIMIT ").append(maxNodes);
             if (i < matchParts.size() - 1) finalCypher.append(" UNION ");
         }
-
+        System.out.println(finalCypher.toString());
         return ResponseEntity.ok(runLineageQuery(finalCypher.toString()));
     }
 

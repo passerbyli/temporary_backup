@@ -1,3 +1,6 @@
+/**
+ * 导出所有表的依赖关系
+ */
 const fs = require('fs/promises');
 const path = require('path');
 const { query } = require('./db');

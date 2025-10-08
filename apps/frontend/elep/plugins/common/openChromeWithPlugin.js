@@ -1,11 +1,8 @@
 const { exec } = require('child_process');
-const os = require('os');
 const path = require('path');
 const fs = require('fs');
 
 function openChromeWithPlugin(pluginDir, guidePagePath) {
-  const chromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-
   if (!fs.existsSync(pluginDir) || !fs.existsSync(path.join(pluginDir, 'manifest.json'))) {
     console.error('❌ 插件目录无效或缺失 manifest.json:', pluginDir);
     return;

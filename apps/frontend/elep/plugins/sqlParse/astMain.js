@@ -1,4 +1,6 @@
-// test.js
+/**
+ * 解析 SQL 语句，生成 G6 血缘图的 nodes 和 edges
+ */
 const fs = require('fs');
 const path = require('path');
 const { parseSql } = require('./sqlParseAst'); // 注意路径是否正确

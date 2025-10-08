@@ -1,4 +1,3 @@
-const { ipcMain } = require('electron');
 const { getConfig, updateConfig } = require('../db/configDb');
 const crud = require('../db/crud');
 
@@ -90,9 +89,9 @@ function registerDataSourceIpc(ipcMain) {
 
   ipcMain.handle('table/distinct-options', async () => {
     return {
-      dataSources: await crud.getDistinctValues('table_metadata', 'name'),
-      schemas: await crud.getDistinctValues('schema_metadata', 'name'),
-      layers: await crud.getDistinctValues('table_metadata', 'layer'),
+      dataSources: await crud.getDistinctValues('pg1', 'metadata_table', 'name'),
+      schemas: await crud.getDistinctValues('pg1', 'metadata_schema', 'name'),
+      layers: await crud.getDistinctValues('pg1', 'metadata_table', 'layer'),
     };
   });
 
@@ -343,23 +342,22 @@ function registerDataSourceIpc(ipcMain) {
     let { id } = data;
     let sql = `
 SELECT
-t.uuid as table_uuid,
+    t.id as table_uuid,
     t.name AS table_name,
     t.schema_name as table_schema_name,
     t.layer as table_layer,
     t.type as table_type,
     t.description as table_description,
-    t.table_statement,
     c.name AS column_name,
     c.description as column_description
 FROM ads_dl.metadata_field c
-         LEFT JOIN ads_dl.metadata_table t ON t.uuid = c.table_uuid
-  WHERE 1=1`;
+         LEFT JOIN ads_dl.metadata_table t ON t.id = c.table_id
+WHERE 1=1`;
 
     const params = [];
 
     if (id) {
-      sql += ` AND c.table_uuid = $${params.length + 1}`;
+      sql += ` AND c.table_id = $${params.length + 1}`;
       params.push(id);
     }
     const tableInfo = await crud.query('pg1', sql, params);
@@ -369,11 +367,11 @@ FROM ads_dl.metadata_field c
   ipcMain.handle('get-table-data-view', async (event, data) => {
     let { table_schema_name, table_name } = data;
     let sql = `
-SELECT
-*
-FROM ${table_schema_name}.${table_name}
-limit 10
- `;
+      SELECT
+      *
+      FROM ${table_schema_name}.${table_name}
+      limit 10
+      `;
 
     const params = [];
 

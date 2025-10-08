@@ -62,17 +62,11 @@
 </template>
 
 <script>
+import { listSources } from '@/services/dataSourceService';
 import { defineComponent, ref, onMounted, toRefs, reactive } from 'vue';
 
 export default defineComponent({
   setup() {
-    // 获取数据库列表
-    const getDatasources = async () => {
-      await window.ipc.sendInvoke('toMain', { event: 'getDataSources' }).then((res) => {
-        dataSources.value = res;
-      });
-    };
-
     // 获取数据库列表
     const loadDataSource = async (database) => {
       await window.ipc.sendInvoke('toMain', { event: 'getDataBases', params: database }).then((res) => {
@@ -90,7 +84,9 @@ export default defineComponent({
     const loadProcedureDefinition = async (proc) => {};
 
     onMounted(() => {
-      getDatasources();
+      listSources().then((res) => {
+        dataSources.value = res;
+      });
     });
 
     const dataSources = ref([]);

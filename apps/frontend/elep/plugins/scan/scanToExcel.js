@@ -1,3 +1,6 @@
+/**
+ * 扫描目录下所有文件，按正则匹配行内字符串，输出 Excel
+ */
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');

@@ -1,3 +1,6 @@
+/**
+ * 读取目录下所有的txt文件，合并到一个文件中
+ */
 const fs = require('fs');
 const path = require('path');
 
@@ -28,7 +31,6 @@ async function main(dir, name) {
     txt += '================================================';
     txt += '\n';
   });
-  //   console.log(files)
 
   fs.writeFileSync(path.join(__dirname, `${name}.txt`), txt, 'utf-8');
 }

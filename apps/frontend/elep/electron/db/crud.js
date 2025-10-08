@@ -150,6 +150,12 @@ async function query(dbName, sql, params = []) {
   }
 }
 
+async function getDistinctValues(dbName, table, name) {
+  const sql = `SELECT DISTINCT "${name}" FROM "ads_dl"."${table}"`;
+  console.log('getDistinctValues', sql);
+  return query(dbName, sql, []);
+}
+
 // 分页查询
 async function queryWithPagination(dbName, baseSql, params = [], { page = 1, pageSize = 20 } = {}) {
   const db = getDb(dbName);
@@ -241,6 +247,7 @@ async function remove(dbName, schema, table, condition = {}) {
 }
 
 module.exports = {
+  getDistinctValues,
   query,
   queryWithPagination,
   insert,

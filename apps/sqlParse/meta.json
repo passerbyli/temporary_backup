@@ -1,0 +1,34 @@
+{
+    "procedures": [
+        {
+            "type": "PROCEDURE",
+            "schema": "public",
+            "name": "proc_sales_summary"
+        }
+    ],
+    "functionNames": [],
+    "sourceTables": [
+        {
+            "schema": "staging",
+            "table": "sales_data",
+            "isTemporary": false
+        },
+        {
+            "schema": "staging",
+            "table": "sales_orders",
+            "isTemporary": false
+        },
+        {
+            "schema": "staging",
+            "table": "temp_sales",
+            "isTemporary": true
+        }
+    ],
+    "targetTables": [
+        {
+            "schema": "report",
+            "table": "sales_summary",
+            "isTemporary": false
+        }
+    ]
+}

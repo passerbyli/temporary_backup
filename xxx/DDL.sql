@@ -181,6 +181,8 @@ CREATE TABLE IF NOT EXISTS meta_data_ds.metadata_table (
                                                            table_desc         text,                      -- 表描述
                                                            table_type         text,                      -- 表类型（如 base/view/temp）
                                                            schema_id          uuid        NOT NULL,      -- 所属 schema（逻辑关联 metadata_schema.id）
+                                                           schema_name        text        NOT NULL,      -- 所属 schema 名称（冗余）
+                                                           is_temporary       boolean     NOT NULL DEFAULT false, -- 是否临时表
                                                            created_at         timestamptz NOT NULL DEFAULT now(),
                                                            updated_at         timestamptz NOT NULL DEFAULT now(),
                                                            created_by         text,
@@ -188,15 +190,17 @@ CREATE TABLE IF NOT EXISTS meta_data_ds.metadata_table (
 );
 
 COMMENT ON TABLE  meta_data_ds.metadata_table IS '数据表元数据表';
-COMMENT ON COLUMN meta_data_ds.metadata_table.id         IS '主键ID，UUID，由应用写入';
-COMMENT ON COLUMN meta_data_ds.metadata_table.table_name IS '表名称';
-COMMENT ON COLUMN meta_data_ds.metadata_table.table_desc IS '表描述';
-COMMENT ON COLUMN meta_data_ds.metadata_table.table_type IS '表类型（base/view/temp）';
-COMMENT ON COLUMN meta_data_ds.metadata_table.schema_id  IS '所属数据库 schema 的ID';
-COMMENT ON COLUMN meta_data_ds.metadata_table.created_at IS '创建时间';
-COMMENT ON COLUMN meta_data_ds.metadata_table.updated_at IS '修改时间';
-COMMENT ON COLUMN meta_data_ds.metadata_table.created_by IS '创建人';
-COMMENT ON COLUMN meta_data_ds.metadata_table.updated_by IS '修改人';
+COMMENT ON COLUMN meta_data_ds.metadata_table.id            IS '主键ID，UUID，由应用写入';
+COMMENT ON COLUMN meta_data_ds.metadata_table.table_name    IS '表名称';
+COMMENT ON COLUMN meta_data_ds.metadata_table.table_desc    IS '表描述';
+COMMENT ON COLUMN meta_data_ds.metadata_table.table_type    IS '表类型（base/view/temp）';
+COMMENT ON COLUMN meta_data_ds.metadata_table.schema_id     IS '所属数据库 schema 的ID';
+COMMENT ON COLUMN meta_data_ds.metadata_table.schema_name   IS '所属 schema 名称';
+COMMENT ON COLUMN meta_data_ds.metadata_table.is_temporary  IS '是否临时表：true/false，默认 false';
+COMMENT ON COLUMN meta_data_ds.metadata_table.created_at    IS '创建时间';
+COMMENT ON COLUMN meta_data_ds.metadata_table.updated_at    IS '修改时间';
+COMMENT ON COLUMN meta_data_ds.metadata_table.created_by    IS '创建人';
+COMMENT ON COLUMN meta_data_ds.metadata_table.updated_by    IS '修改人';
 
 -- ---------------------------------------------------------
 -- 6) 表字段元数据
@@ -204,6 +208,9 @@ COMMENT ON COLUMN meta_data_ds.metadata_table.updated_by IS '修改人';
 CREATE TABLE IF NOT EXISTS meta_data_ds.metadata_table_field (
                                                                  id                 uuid PRIMARY KEY,
                                                                  table_id           uuid        NOT NULL,      -- 所属表ID（逻辑关联 metadata_table.id）
+                                                                 table_name         text        NOT NULL,      -- 所属表ID（逻辑关联 metadata_table.id）
+                                                                 schema_id          uuid        NOT NULL,      -- 所属数据库 schema 的ID
+                                                                 schema_name        text        NOT NULL,      -- 所属 schema 名称（冗余）
                                                                  field_name         text        NOT NULL,      -- 字段名称
                                                                  field_type         text,                      -- 字段类型（如 int4/varchar/numeric(10,2)）
                                                                  field_desc         text,                      -- 字段描述
@@ -236,6 +243,7 @@ CREATE TABLE IF NOT EXISTS meta_data_ds.metadata_procedure (
                                                                procedure_name     text        NOT NULL,      -- 存储过程名称
                                                                procedure_desc     text,                      -- 描述
                                                                schema_id          uuid        NOT NULL,      -- 所属 schema（逻辑关联 metadata_schema.id）
+                                                               schema_name        text        NOT NULL,      -- 所属 schema 名称（冗余）
                                                                procedure_script   text,                      -- 存储过程脚本内容
                                                                input_params_text  text,                      -- 入参定义（文本）
                                                                output_params_text text,                      -- 出参定义（文本）
@@ -269,6 +277,7 @@ CREATE TABLE IF NOT EXISTS meta_data_ds.metadata_procedure_target_table (
                                                                             target_table_name    text        NOT NULL,    -- 目标表名称
                                                                             target_table_desc    text,                    -- 目标表描述
                                                                             schema_id            uuid        NOT NULL,    -- 所属数据库 schema 的ID
+                                                                            schema_name        text        NOT NULL,      -- 所属 schema 名称（冗余）
                                                                             created_at           timestamptz NOT NULL DEFAULT now(),
                                                                             updated_at           timestamptz NOT NULL DEFAULT now(),
                                                                             created_by           text,
@@ -299,6 +308,7 @@ CREATE TABLE IF NOT EXISTS meta_data_ds.metadata_procedure_source_table (
                                                                             source_table_name    text        NOT NULL,    -- 源表名称
                                                                             source_table_desc    text,                    -- 源表描述
                                                                             schema_id            uuid        NOT NULL,    -- 所属数据库 schema 的ID
+                                                                            schema_name        text        NOT NULL,      -- 所属 schema 名称（冗余）
                                                                             created_at           timestamptz NOT NULL DEFAULT now(),
                                                                             updated_at           timestamptz NOT NULL DEFAULT now(),
                                                                             created_by           text,

@@ -26,12 +26,14 @@ namespace dotnetCore.Controllers
         /// <summary>
         /// 获取天气
         /// </summary>
-        /// <returns></returns>
+        /// <remarks>描述：这是一个查询添加的POST请求</remarks>
+        /// <param name="cityCode">城市Code</param>
+        /// <returns>返回天气信息</returns>
         [HttpGet]
         [Route("GetWeather")]
-        [HttpPost("create")]
+        [HttpPost("get")]
         [BindAndPick(typeof(WeatherForecast), AuthFieldKind.BusinessId)]
-        public IEnumerable<WeatherForecast> Get()
+        public IEnumerable<WeatherForecast> Get(string cityCode)
         {
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
@@ -48,25 +50,39 @@ namespace dotnetCore.Controllers
         /// <summary>
         /// 创建任务
         /// </summary>
-        /// <param name="cusTask"></param>
-        /// <returns></returns>
+        /// <remarks>这是一个理智</remarks>
+        /// <param name="cusTask">任务</param>
+        /// <returns>创建任务的状态</returns>
         [HttpPost]
         [Route("createTask")]
-        public IList<CusTask> CreateTask(CusTask cusTask)
+        public AppConfig CreateTask(CusTask cusTask)
         {
             var cus = new List<CusTask>();
             cus.Add(new CusTask()
             {
                 Title="aaa"
             });
-            return cus;
+            return new AppConfig();
         }
         
         /// <summary>
         /// 批量创建任务
         /// </summary>
-        /// <param name="list"></param>
-        /// <returns></returns>
+        /// <param name="list">任务集合</param>
+        /// <returns>djodjsaio</returns>
+        /// <remarks>
+        /// 示例请求:
+        /// 
+        ///     GET /users/1
+        /// 
+        /// 示例响应:
+        /// 
+        ///     {
+        ///         "id": 1,
+        ///         "name": "John Doe"
+        ///     }
+        /// </remarks>
+        /// <example>啊啊啊</example>
         [HttpPost]
         [Route("createTasks")]
         public IList<CusTask> CreateTasks(List<CusTask> list)

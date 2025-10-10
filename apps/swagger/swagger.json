@@ -1,0 +1,361 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+        "title": "dotnetCore 接口文档――Netcore 3.0",
+        "description": "dotnetCore HTTP API V1",
+        "contact": {
+            "name": "dotnetCore",
+            "url": "https://www.baidu.com",
+            "email": "dotnetCore@xxx.com"
+        },
+        "license": {
+            "name": "dotnetCore",
+            "url": "https://www.baidu.com"
+        },
+        "version": "V1"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:5001",
+            "description": "本地"
+        }
+    ],
+    "paths": {
+        "/_sslcheck": {
+            "post": {
+                "tags": [
+                    "SslCheck"
+                ],
+                "summary": "POST: /_sslcheck\r\nbody:\r\n{\r\n  \"url\": \"https://api.xxx.com/health\",\r\n  \"authorization\": \"Bearer abc123\",\r\n  \"params\": { \"id\": \"100\", \"type\": \"test\" }\r\n}",
+                "operationId": "SslCheck_post_Check__sslcheck",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SslCheckRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/WeatherForecast/createTask": {
+            "post": {
+                "tags": [
+                    "WeatherForecast"
+                ],
+                "summary": "创建任务",
+                "description": "这是一个理智",
+                "operationId": "WeatherForecast_post_CreateTask_WeatherForecast_createTask",
+                "requestBody": {
+                    "description": "任务",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CusTask"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AppConfig"
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AppConfig"
+                                }
+                            },
+                            "text/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AppConfig"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/WeatherForecast/createTasks": {
+            "post": {
+                "tags": [
+                    "WeatherForecast"
+                ],
+                "summary": "批量创建任务",
+                "description": "示例请求:\r\n\r\n    GET /users/1\r\n\r\n示例响应:\r\n\r\n    {\r\n        \"id\": 1,\r\n        \"name\": \"John Doe\"\r\n    }",
+                "operationId": "WeatherForecast_post_CreateTasks_WeatherForecast_createTasks",
+                "requestBody": {
+                    "description": "任务集合",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/CusTask"
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CusTask"
+                                    }
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CusTask"
+                                    }
+                                }
+                            },
+                            "text/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CusTask"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/WeatherForecast/get": {
+            "post": {
+                "tags": [
+                    "WeatherForecast"
+                ],
+                "summary": "获取天气",
+                "description": "描述：这是一个查询添加的POST请求",
+                "operationId": "WeatherForecast_post_Get_WeatherForecast_get",
+                "parameters": [
+                    {
+                        "name": "cityCode",
+                        "in": "query",
+                        "description": "城市Code",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/WeatherForecast"
+                                    }
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/WeatherForecast"
+                                    }
+                                }
+                            },
+                            "text/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/WeatherForecast"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/WeatherForecast/GetWeather": {
+            "get": {
+                "tags": [
+                    "WeatherForecast"
+                ],
+                "summary": "获取天气",
+                "description": "描述：这是一个查询添加的POST请求",
+                "operationId": "WeatherForecast_get_Get_WeatherForecast_GetWeather",
+                "parameters": [
+                    {
+                        "name": "cityCode",
+                        "in": "query",
+                        "description": "城市Code",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/WeatherForecast"
+                                    }
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/WeatherForecast"
+                                    }
+                                }
+                            },
+                            "text/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/WeatherForecast"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "AppConfig": {
+                "type": "object",
+                "properties": {
+                    "enableRequestSizeLimit": {
+                        "type": "boolean",
+                        "description": "开启请求长度限制"
+                    },
+                    "userInfo": {
+                        "$ref": "#/components/schemas/UserInfo"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "CusTask": {
+                "required": [
+                    "context"
+                ],
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "maxLength": 10,
+                        "minLength": 3,
+                        "type": "string",
+                        "description": "标题",
+                        "nullable": true
+                    },
+                    "context": {
+                        "type": "string",
+                        "description": "内容"
+                    },
+                    "createTime": {
+                        "type": "string",
+                        "description": "创建时间",
+                        "nullable": true
+                    }
+                },
+                "additionalProperties": false
+            },
+            "SslCheckRequest": {
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "authorization": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "params": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "nullable": true
+                    }
+                },
+                "additionalProperties": false
+            },
+            "UserInfo": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "用户名称",
+                        "nullable": true
+                    },
+                    "age": {
+                        "type": "string",
+                        "description": "用户年龄",
+                        "nullable": true
+                    }
+                },
+                "additionalProperties": false,
+                "description": "用户信息"
+            },
+            "WeatherForecast": {
+                "type": "object",
+                "properties": {
+                    "date": {
+                        "type": "string",
+                        "description": "日期",
+                        "format": "date-time"
+                    },
+                    "temperatureC": {
+                        "type": "integer",
+                        "description": "气温-摄氏温标",
+                        "format": "int32"
+                    },
+                    "temperatureF": {
+                        "type": "integer",
+                        "description": "气温-华氏度",
+                        "format": "int32",
+                        "readOnly": true
+                    },
+                    "summary": {
+                        "type": "string",
+                        "description": "概要",
+                        "nullable": true
+                    }
+                },
+                "additionalProperties": false
+            }
+        },
+        "securitySchemes": {
+            "oauth2": {
+                "type": "apiKey",
+                "description": "JWT授权(数据将在请求头中进行传输) 直接在下框中输入Bearer {token}（注意两者之间是一个空格）\"",
+                "name": "Authorization",
+                "in": "header"
+            }
+        }
+    }
+}

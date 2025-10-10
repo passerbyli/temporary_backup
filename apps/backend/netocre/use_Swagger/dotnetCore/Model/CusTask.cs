@@ -7,11 +7,12 @@ public class CusTask
     /// <summary>
     /// 标题
     /// </summary>
-    [StringLength(10, MinimumLength = 3)]
+    [StringLength(10, MinimumLength = 3,ErrorMessage = "长度最小3个字符，最大10个字符")]
     public string Title { get; set; }
     /// <summary>
     /// 内容
     /// </summary>
+    [Required]
     public string Context { get; set; }
     /// <summary>
     /// 创建时间
@@ -20,5 +21,5 @@ public class CusTask
     /// <summary>
     /// 用户信息
     /// </summary>
-    public UserInfo UserInfo { get; set; }
+    // public UserInfo UserInfo { get; set; }
 }

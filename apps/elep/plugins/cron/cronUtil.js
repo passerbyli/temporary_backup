@@ -67,9 +67,7 @@ class CronJob {
   }
 }
 
-module.exports = {
-  CronJob,
-};
+module.exports = { CronJob };
 
 if (require.main === module) {
   const job = new CronJob('MyJob');
@@ -83,5 +81,5 @@ if (require.main === module) {
   // 例如 10 秒后手动停止
   setTimeout(() => {
     job.stop();
-  }, 100000);
+  }, 1000);
 }

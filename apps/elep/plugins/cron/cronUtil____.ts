@@ -1,6 +1,6 @@
 // common/cronJob.ts
-import { CronJob as NodeCronJob } from 'cron';
-import validator from 'validator';
+const { CronJob: NodeCronJob } = require('cron');
+const validator = require('validator');
 
 type CallbackFn = () => void;
 

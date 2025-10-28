@@ -1,2 +1,26 @@
 npm i -D husky lint-staged @supabase/pg-parser sql-formatter
 npx husky init
+
+
+
+// scripts/pg-sql-format.js (CommonJS)
+const { format } = require("sql-formatter");
+const { readFileSync, writeFileSync } = require("node:fs");
+const { execSync } = require("node:child_process");
+
+const staged = execSync("git diff --cached --name-only --diff-filter=ACM", { encoding: "utf8" })
+  .split("\n")
+  .filter((f) => f && f.toLowerCase().endsWith(".sql"));
+
+for (const file of staged) {
+  const sql = readFileSync(file, "utf8");
+  const out = format(sql, {
+    language: "postgresql",
+    uppercase: true,
+    indent: "  ",
+  });
+  if (out !== sql) {
+    writeFileSync(file, out, "utf8");
+    console.log(`Formatted: ${file}`);
+  }
+}

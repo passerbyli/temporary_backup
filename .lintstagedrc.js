@@ -3,4 +3,5 @@ export default {
   // '*.{js,ts,mjs,json,tsx,css,less,scss,vue,html,md}': ['cspell lint'],
   // '*.{ts,tsx,js,jsx,vue,md}': ['prettier --write', 'eslint'],
   '*.{ts,tsx,js,jsx,vue,md}': ['prettier --write'],
+  '*.sql': ['node scripts/pg-sql-guard.js'],
 };

@@ -10,7 +10,9 @@
     "spellcheck": "cspell lint \"(packages|apps)/**/*.{ts,tsx,js,jsx,mjs,cjs,css,less,scss,vue,html,md}\"",
     "commit": "git-cz",
     "prepare": "husky",
-    "precommit": "lint-staged"
+    "precommit": "lint-staged",
+    "sql:lint": "node scripts/pg-sql-guard.js",
+    "sql:format": "node scripts/pg-sql-format.js"
   },
   "config": {
     "commitizen": {
@@ -69,5 +71,9 @@
     "onlyBuiltDependencies": [
       "electron"
     ]
+  },
+  "dependencies": {
+    "@supabase/pg-parser": "^0.1.3",
+    "sql-formatter": "^15.6.10"
   }
 }

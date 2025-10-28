@@ -49,6 +49,16 @@ namespace dotnetCore
             });
 
 
+            var mvcBuilder = services.AddMvc();
+
+            if (features.GetValue<bool>("EnableParam"))
+            {
+                mvcBuilder.ConfigureApiBehaviorOptions(opt =>
+                {
+
+                });
+            }
+            
             services.AddControllers(options => { options.Filters.Add<CustomerExceptionFilter>(); })
                 .AddJsonOptions(o =>
                 {
@@ -143,7 +153,6 @@ namespace dotnetCore
             // HtmlEncoder 供中间件使用（简单清洗时）
             services.AddSingleton(HtmlEncoder.Default);
 
-            /********/
             services.Configure<ParamAuthOptions>(Configuration.GetSection("ParamAuth"));
 
             services.AddHttpClient("ParamAuthClient", (sp, c) =>

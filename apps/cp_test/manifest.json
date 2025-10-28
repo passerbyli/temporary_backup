@@ -1,0 +1,40 @@
+{
+    "manifest_version": 3,
+    "name": "AuthInspector - Request Capture & Replay",
+    "version": "0.9.0",
+    "description": "Capture page XHR/Fetch, replay with multiple accounts (tokens/cookies) to test horizontal/vertical auth.",
+    "permissions": [
+        "storage",
+        "activeTab",
+        "scripting",
+        "webRequest",
+        "webRequestBlocking",
+        "cookies"
+    ],
+    "host_permissions": [
+        "<all_urls>"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "action": {
+        "default_popup": "popup.html",
+        "default_title": "AuthInspector"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "content_script.js"
+            ],
+            "run_at": "document_start"
+        }
+    ],
+    "icons": {
+        "16": "icon16.png",
+        "48": "icon48.png",
+        "128": "icon128.png"
+    }
+}

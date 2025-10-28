@@ -11,5 +11,6 @@ pgsql
 Prefixs
 procs
 Quiting
+supabase
 unmaximize
 uuidv

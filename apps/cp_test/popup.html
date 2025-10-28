@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>AuthInspector</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="container">
+    <h2>AuthInspector</h2>
+
+    <section id="filterSection">
+      <div class="sectionHeader">
+        <h3>Filter Rules</h3>
+        <button id="saveFilterBtn">Save</button>
+      </div>
+      <label><input type="checkbox" id="useFilters" /> Use filters</label>
+      <label>Include URL Regex <input id="includeRegex" placeholder="/api/user/.*" style="width:100%"></label>
+      <label>Exclude URL Regex <input id="excludeRegex" placeholder="/static/|/assets/" style="width:100%"></label>
+      <p class="hint">启用后仅保存匹配 include 且不匹配 exclude 的请求。</p>
+    </section>
+
+    <section id="capturesSection">
+      <div class="sectionHeader">
+        <h3>Captured Requests</h3>
+        <button id="refreshBtn">Refresh</button>
+        <button id="exportBtn">Export JSON</button>
+      </div>
+      <div id="capturesList" class="list"></div>
+    </section>
+
+    <section id="accountsSection">
+      <div class="sectionHeader">
+        <h3>Accounts</h3>
+        <button id="saveAccountsBtn">Save</button>
+        <button id="addAccountBtn">Add Account</button>
+      </div>
+      <p class="hint">每个账号支持两种类型：token 或 cookie。对于 cookie 类型：建议点击 "Open login tab" 手动登录目标站点，然后点击 "Capture cookies" 从该标签页抓取会话并保存在账号下。</p>
+      <div id="accountsList" class="list"></div>
+    </section>
+
+    <section id="replayOptions">
+      <h3>Replay Options</h3>
+      <label>Concurrency <input id="optConcurrency" type="number" value="2" min="1" /></label>
+      <label>Delay between batches (ms) <input id="optDelay" type="number" value="200" min="0" /></label>
+      <label><input id="optUseStoredCookies" type="checkbox" /> Use stored cookies when replaying (will set cookies for target domain)</label>
+    </section>
+
+    <section id="resultsSection">
+      <h3>Replay Results</h3>
+      <div id="results"></div>
+    </section>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,2 @@
+npm i -D husky lint-staged @supabase/pg-parser sql-formatter
+npx husky init

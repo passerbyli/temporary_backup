@@ -1,6 +1,7 @@
 antv
 cookiejar
 defval
+dtype
 elep
 exceljs
 graphlib
@@ -11,6 +12,7 @@ pgsql
 Prefixs
 procs
 Quiting
+rtype
 supabase
 unmaximize
 uuidv

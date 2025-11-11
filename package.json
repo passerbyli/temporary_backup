@@ -10,7 +10,7 @@
     "spellcheck": "cspell lint \"(packages|apps)/**/*.{ts,tsx,js,jsx,mjs,cjs,css,less,scss,vue,html,md}\"",
     "commit": "git-cz",
     "prepare": "husky",
-    "precommit": "lint-staged",
+    "precommit": "lint-staged --concurrent 1",
     "sql:lint": "node scripts/pg-sql-guard.js",
     "sql:format": "node scripts/pg-sql-format.js"
   },

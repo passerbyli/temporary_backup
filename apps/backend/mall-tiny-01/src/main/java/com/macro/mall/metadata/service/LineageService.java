@@ -1,5 +1,6 @@
 package com.macro.mall.metadata.service;
 
+import com.macro.mall.metadata.common.Constant;
 import com.macro.mall.metadata.repository.Neo4jRepository;
 import com.macro.mall.metadata.repository.PostgresRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,9 +15,8 @@ public class LineageService {
     private PostgresRepository pgRepo;
     @Autowired private Neo4jRepository neoRepo;
 
-    public void updateLineages(List<Map<String, Object>> lineages) {
+    public void updateLineages(List<Map<String, Object>> lineages)  {
         if (lineages == null || lineages.isEmpty()) return;
-
         // 先更新 PostgreSQL
         pgRepo.updateLineagesBatch(lineages);
 

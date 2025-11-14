@@ -1,247 +1,306 @@
 <template>
     <div class="llm-demo">
-        <!-- 顶部输入卡片 -->
-        <div class="card input-card">
-            <h2 class="card-title">大模型分析 Demo</h2>
-            <div class="input-row">
-                <input v-model="inputText" class="query-input" type="text" placeholder="请输入要分析的问题，例如：分析一下这个错误日志…"
-                    @keyup.enter="handleAnalyze" />
-                <button class="primary-btn" :disabled="!inputTextTrim || isLoading || isStreaming"
+        <!-- 查询表单 -->
+        <el-card shadow="never" class="input-card">
+            <div slot="header">
+                <span>大模型分析 Demo</span>
+            </div>
+
+            <el-form :inline="true" :model="form" class="query-form">
+                <el-form-item label="伙伴编码" required>
+                    <el-input v-model="form.partnerCode" placeholder="必填" clearable style="width: 200px" />
+                </el-form-item>
+                <el-form-item label="客户编码">
+                    <el-input v-model="form.customerCode" placeholder="选填" clearable style="width: 200px" />
+                </el-form-item>
+            </el-form>
+
+            <el-form label-position="top" class="query-form">
+                <el-form-item label="分析内容">
+                    <el-input type="textarea" :rows="3" v-model="form.query" placeholder="请输入要分析的内容，如：分析一下这个错误日志…" />
+                </el-form-item>
+            </el-form>
+
+            <div class="input-actions">
+                <el-button type="primary" :loading="isLoading || isStreaming" :disabled="!canAnalyze"
                     @click="handleAnalyze">
                     {{ isLoading || isStreaming ? '分析中…' : '分析' }}
-                </button>
+                </el-button>
+                <span class="tip">伙伴编码必填，客户编码可选。点击“分析”后会模拟大模型的流式输出。</span>
             </div>
-            <p class="tip">演示：流式输出 + Markdown 渲染 + 动态耗时 + 点赞/点踩反馈。</p>
-        </div>
+        </el-card>
 
-        <!-- 输出卡片 -->
-        <div class="card output-card">
-            <!-- 顶部操作条：复制按钮、状态 -->
-            <div class="output-toolbar">
-                <div class="status-text">
-                    <span v-if="isLoading">状态：思考中…</span>
-                    <span v-else-if="isStreaming">状态：回答生成中…</span>
-                    <span v-else-if="outputMarkdown">状态：已完成</span>
-                    <span v-else>状态：待输入</span>
+        <!-- 结果 + 耗时 + 反馈 -->
+        <el-card shadow="never" class="output-card">
+            <div slot="header" class="output-header">
+                <span>分析结果</span>
+                <div class="metrics">
+                    <div class="metric-item">
+                        <span class="metric-label">首个响应</span>
+                        <span class="metric-value">{{ latencyDisplay }}</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">响应耗时</span>
+                        <span class="metric-value">{{ responseDisplay }}</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">总耗时</span>
+                        <span class="metric-value">{{ totalDisplay }}</span>
+                    </div>
+                    <el-button size="mini" type="text" icon="el-icon-document-copy" :disabled="!outputMarkdown"
+                        @click="copyResult">
+                        复制
+                    </el-button>
                 </div>
-                <button class="ghost-btn small" :disabled="!outputMarkdown" @click="copyOutput">
-                    复制内容
-                </button>
             </div>
 
             <!-- 加载动画 -->
             <div v-if="isLoading" class="loading-wrapper">
                 <div class="spinner"></div>
-                <span>大模型正在思考，请稍候…</span>
+                <span>思考中，请稍候…</span>
             </div>
 
-            <!-- 固定高度输出区域 -->
-            <div ref="outputContainer" class="output-wrapper fixed-height">
-                <div v-if="outputMarkdown" class="markdown-body" v-html="renderedMarkdown"></div>
-
-                <div v-else-if="!isLoading" class="empty-state">
-                    暂无内容，请在上方输入问题并点击「分析」开始体验。
-                </div>
+            <!-- 固定高度的输出区域，自动滚动到底部 -->
+            <div class="output-scroll" v-if="outputMarkdown || isStreaming" ref="outputScroll">
+                <div class="markdown-body" v-html="renderedMarkdown"></div>
             </div>
 
-            <!-- 动态耗时 -->
-            <div v-if="analyzeStartTime" class="timing-panel">
-                <div class="timing-item">
-                    <span class="label">从分析到首个响应：</span>
-                    <span class="value">{{ timeToFirstStr }}</span>
-                </div>
-                <div class="timing-item">
-                    <span class="label">响应耗时：</span>
-                    <span class="value">{{ responseDurationStr }}</span>
-                </div>
-                <div class="timing-item">
-                    <span class="label">总耗时：</span>
-                    <span class="value">{{ totalDurationStr }}</span>
-                </div>
+            <!-- 空状态 -->
+            <div v-if="!isLoading && !isStreaming && !outputMarkdown" class="empty-state">
+                暂无内容，请先输入信息并点击「分析」。
             </div>
 
             <!-- 点赞 / 点踩 -->
             <div v-if="!isLoading && !isStreaming && outputMarkdown" class="feedback-actions">
-                <button class="icon-btn" :class="{ active: liked === true }" @click="handleLike">
+                <el-button size="mini" class="icon-btn" :type="liked === true ? 'primary' : 'default'"
+                    :plain="liked !== true" :disabled="feedbackSubmitted" @click="handleLike">
                     👍 满意
-                </button>
-                <button class="icon-btn" :class="{ active: liked === false }" @click="handleDislike">
+                </el-button>
+                <el-button size="mini" class="icon-btn" :type="liked === false ? 'danger' : 'default'"
+                    :plain="liked !== false" :disabled="feedbackSubmitted" @click="handleDislike">
                     👎 不满意
-                </button>
+                </el-button>
                 <span v-if="liked === true" class="feedback-hint">
                     感谢你的反馈 🙌
                 </span>
+                <span v-if="feedbackSubmitted" class="feedback-hint">
+                    已提交反馈，无法再次评价。
+                </span>
             </div>
 
-            <!-- 反馈文本框 -->
+            <!-- 反馈文本框（点踩时出现） -->
             <div v-if="showFeedbackBox" class="feedback-box">
-                <textarea v-model="feedbackText" class="feedback-textarea"
-                    placeholder="可以简单说明哪里不准确、不清晰或不符合预期…"></textarea>
+                <el-input type="textarea" :rows="3" v-model="feedbackText" placeholder="可以简单描述哪里不准确、不有用或有问题…" />
                 <div class="feedback-btn-row">
-                    <button class="primary-btn" :disabled="!feedbackTextTrim || isSubmittingFeedback"
+                    <el-button type="primary" size="mini" :disabled="!feedbackTextTrim || isSubmittingFeedback"
                         @click="submitFeedback">
                         {{ isSubmittingFeedback ? '提交中…' : '提交反馈' }}
-                    </button>
-                    <button class="ghost-btn" @click="cancelFeedback" :disabled="isSubmittingFeedback">
+                    </el-button>
+                    <el-button size="mini" :disabled="isSubmittingFeedback" @click="cancelFeedback">
                         取消
-                    </button>
+                    </el-button>
                 </div>
             </div>
-        </div>
+        </el-card>
     </div>
 </template>
 
 <script>
-// marked v15 写法
-import { marked } from 'marked'
+// 注意：marked 1.x 用法是 marked(str)，不是 marked.parse
+import {marked} from 'marked'
 
 export default {
     name: 'LLMStreamDemo',
     data() {
         return {
-            inputText: '',
+            form: {
+                partnerCode: '',
+                customerCode: '',
+                query: ''
+            },
             isLoading: false,
             isStreaming: false,
             outputMarkdown: '',
-            streamTimer: null,
-
-            liked: null,
+            liked: null, // true / false / null
             showFeedbackBox: false,
             feedbackText: '',
             isSubmittingFeedback: false,
+            feedbackSubmitted: false, // 提交反馈后禁止再点赞/点踩
+            streamTimer: null,
 
-            analyzeStartTime: null,
-            firstChunkTime: null,
-            lastChunkTime: null,
-            timingTimer: null
+            // 耗时相关
+            tStart: null,
+            tFirstChunk: null,
+            tEnd: null,
+            latencyMs: null,
+            responseMs: null,
+            totalMs: null
         }
     },
     computed: {
-        inputTextTrim() {
-            return this.inputText.trim()
+        canAnalyze() {
+            return (
+                this.form.partnerCode.trim() &&
+                this.form.query.trim() &&
+                !this.isLoading &&
+                !this.isStreaming
+            )
         },
         feedbackTextTrim() {
             return this.feedbackText.trim()
         },
         renderedMarkdown() {
-            return marked.parse(this.outputMarkdown || '')
+            return marked(this.outputMarkdown || '')
         },
-        timeToFirst() {
-            if (!this.analyzeStartTime || !this.firstChunkTime) return 0
-            return this.firstChunkTime - this.analyzeStartTime
+        latencyDisplay() {
+            if (this.latencyMs == null) {
+                return this.isLoading || this.isStreaming ? '计算中…' : '—'
+            }
+            return (this.latencyMs / 1000).toFixed(2) + ' s'
         },
-        responseDuration() {
-            if (!this.firstChunkTime || !this.lastChunkTime) return 0
-            return this.lastChunkTime - this.firstChunkTime
-        },
-        totalDuration() {
-            if (!this.analyzeStartTime) return 0
-            return (this.lastChunkTime || Date.now()) - this.analyzeStartTime
-        },
-        timeToFirstStr() {
-            return this.formatDuration(this.timeToFirst)
-        },
-        responseDurationStr() {
-            return this.formatDuration(this.responseDuration)
-        },
-        totalDurationStr() {
-            return this.formatDuration(this.totalDuration)
-        }
-    },
-    watch: {
-        // 每次输出变化时，自动滚动到底部
-        outputMarkdown() {
-            this.$nextTick(() => {
-                const el = this.$refs.outputContainer
-                if (el) {
-                    el.scrollTop = el.scrollHeight
+        responseDisplay() {
+            if (this.responseMs == null) {
+                // 首个响应有了，但还在流式中，显示计算中
+                if (this.latencyMs != null && (this.isStreaming || this.isLoading)) {
+                    return '计算中…'
                 }
-            })
+                return '—'
+            }
+            return (this.responseMs / 1000).toFixed(2) + ' s'
+        },
+        totalDisplay() {
+            if (this.totalMs == null) {
+                return this.isStreaming || this.isLoading ? '计算中…' : '—'
+            }
+            return (this.totalMs / 1000).toFixed(2) + ' s'
         }
     },
     methods: {
         handleAnalyze() {
-            if (!this.inputTextTrim || this.isLoading || this.isStreaming) return
+            if (!this.canAnalyze) return
 
-            this.resetAll()
-
-            this.analyzeStartTime = Date.now()
+            this.resetStateForNewQuery()
             this.isLoading = true
+            this.tStart = Date.now()
 
-            // 模拟“思考中”
+            // 模拟“先思考一下”，再开始流式输出
             setTimeout(() => {
                 this.isLoading = false
                 this.startFakeStream()
             }, 500)
-
-            // 动态刷新耗时显示
-            this.timingTimer = setInterval(() => {
-                this.$forceUpdate()
-            }, 100)
         },
-
-        resetAll() {
-            clearInterval(this.streamTimer)
-            clearInterval(this.timingTimer)
-
-            this.outputMarkdown = ''
-            this.isStreaming = false
+        resetStateForNewQuery() {
+            this.clearStreamTimer()
             this.isLoading = false
-
-            this.analyzeStartTime = null
-            this.firstChunkTime = null
-            this.lastChunkTime = null
-
+            this.isStreaming = false
+            this.outputMarkdown = ''
             this.liked = null
             this.showFeedbackBox = false
             this.feedbackText = ''
             this.isSubmittingFeedback = false
-        },
+            this.feedbackSubmitted = false
 
-        // 模拟流式输出（真实接入时改这里）
+            this.tStart = null
+            this.tFirstChunk = null
+            this.tEnd = null
+            this.latencyMs = null
+            this.responseMs = null
+            this.totalMs = null
+        },
+        // 模拟流式输出（接入真实流式接口时替换这里即可）
         startFakeStream() {
             this.isStreaming = true
             this.outputMarkdown = ''
 
             const chunks = [
-                `## 分析结果概览\n\n你输入的是：\n\n> ${this.inputText}\n\n下面是基于内容给出的示例分析：\n\n`,
-                `### 1. 可能原因\n- 这是一个用于演示的段落。\n- 实际项目中，这里应替换为大模型的真实输出。\n\n`,
-                `### 2. 建议步骤\n1. 提供更完整的上下文信息。\n2. 逐步拆解问题，分步骤提问。\n3. 对重要结论进行人工复核。\n\n`,
-                `### 3. 示例代码\n\`\`\`js\nfunction demo() {\n  console.log('这里是代码块示例');\n}\n\`\`\`\n\n`,
-                `---\n如果你觉得这个回答不够好，可以点击 👎 提交反馈，帮助我们优化大模型体验。`
+                `## 分析结果概览\n\n你输入的伙伴编码是：\`${this.form.partnerCode}\`，客户编码是：\`${this.form.customerCode || '（未填写）'}\`\n\n你的问题是：\n\n> ${this.form.query}\n\n下面是根据问题给出的分析：\n\n`,
+                `### 1. 可能的原因\n\n- 这是一个示例段落，用于演示 **Markdown** 渲染和流式输出效果。\n- 在真实场景下，这里应该是大模型返回的内容。\n\n`,
+                `### 2. 建议的排查步骤\n\n1. 检查输入是否完整、上下文是否充分。\n2. 如果涉及错误日志，建议提供 **关键堆栈信息**。\n3. 可以多次迭代提问，让模型逐步细化结论。\n\n`,
+                `### 3. 示例代码\n\n\`\`\`js\nfunction demo() {\n  console.log('这里可以放一些示例代码');\n}\n\`\`\`\n\n`,
+                `---\n\n如果你觉得这个回答不够有用，可以点击 👎 并填写反馈，帮助我们不断改进体验。`
             ]
 
-            let idx = 0
+            let index = 0
             this.streamTimer = setInterval(() => {
-                if (idx < chunks.length) {
-                    if (idx === 0 && !this.firstChunkTime) {
-                        this.firstChunkTime = Date.now()
+                if (index < chunks.length) {
+                    // 首个 chunk 到达时记录首包时间
+                    if (index === 0 && !this.tFirstChunk && this.tStart) {
+                        this.tFirstChunk = Date.now()
+                        this.latencyMs = this.tFirstChunk - this.tStart
                     }
-                    this.outputMarkdown += chunks[idx]
-                    idx++
+
+                    this.outputMarkdown += chunks[index]
+                    index++
+
+                    // 每追加一次，滚动到底部
+                    this.$nextTick(() => {
+                        const el = this.$refs.outputScroll
+                        if (el) {
+                            el.scrollTop = el.scrollHeight
+                        }
+                    })
                 } else {
-                    clearInterval(this.streamTimer)
+                    this.clearStreamTimer()
                     this.isStreaming = false
-                    this.lastChunkTime = Date.now()
+                    this.tEnd = Date.now()
+
+                    if (this.tFirstChunk && this.tEnd) {
+                        this.responseMs = this.tEnd - this.tFirstChunk
+                    }
+                    if (this.tStart && this.tEnd) {
+                        this.totalMs = this.tEnd - this.tStart
+                    }
                 }
-            }, 500)
+            }, 500) // 每 500ms 输出一段
         },
-
-        formatDuration(ms) {
-            if (!ms || ms <= 0) return '--'
-            if (ms < 1000) return `${ms} ms`
-            return (ms / 1000).toFixed(2) + ' s'
+        clearStreamTimer() {
+            if (this.streamTimer) {
+                clearInterval(this.streamTimer)
+                this.streamTimer = null
+            }
         },
+        handleLike() {
+            if (this.feedbackSubmitted) return
+            this.liked = true
+            this.showFeedbackBox = false
+        },
+        handleDislike() {
+            if (this.feedbackSubmitted) return
+            this.liked = false
+            this.showFeedbackBox = true
+        },
+        submitFeedback() {
+            if (!this.feedbackTextTrim) return
+            this.isSubmittingFeedback = true
 
-        // 复制输出内容（复制 markdown 文本）
-        copyOutput() {
+            // 这里替换为你的真实反馈接口
+            setTimeout(() => {
+                console.log('反馈内容：', {
+                    partnerCode: this.form.partnerCode,
+                    customerCode: this.form.customerCode,
+                    query: this.form.query,
+                    liked: this.liked,
+                    feedback: this.feedbackTextTrim
+                })
+                this.isSubmittingFeedback = false
+                this.showFeedbackBox = false
+                this.feedbackSubmitted = true
+                this.$message.success('感谢你的反馈，我们会尽快改进！')
+            }, 600)
+        },
+        cancelFeedback() {
+            this.showFeedbackBox = false
+            this.feedbackText = ''
+            // 看需求是否保留点踩状态，这里先保留
+        },
+        copyResult() {
             const text = this.outputMarkdown || ''
             if (!text) return
 
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(text).then(
                     () => {
-                        alert('内容已复制到剪贴板')
+                        this.$message.success('已复制到剪贴板')
                     },
                     () => {
                         this.fallbackCopy(text)
@@ -260,46 +319,15 @@ export default {
             textarea.select()
             try {
                 document.execCommand('copy')
-                alert('内容已复制到剪贴板')
+                this.$message.success('已复制到剪贴板')
             } catch (e) {
-                alert('复制失败，请手动选择内容复制')
+                this.$message.error('复制失败')
             }
             document.body.removeChild(textarea)
-        },
-
-        // 反馈相关
-        handleLike() {
-            this.liked = true
-            this.showFeedbackBox = false
-        },
-        handleDislike() {
-            this.liked = false
-            this.showFeedbackBox = true
-        },
-        submitFeedback() {
-            if (!this.feedbackTextTrim) return
-            this.isSubmittingFeedback = true
-
-            // 这里可以换成真实接口
-            setTimeout(() => {
-                console.log('反馈内容：', this.feedbackTextTrim, {
-                    timeToFirst: this.timeToFirst,
-                    responseDuration: this.responseDuration,
-                    totalDuration: this.totalDuration
-                })
-                this.isSubmittingFeedback = false
-                this.showFeedbackBox = false
-                alert('反馈已提交，感谢你的帮助！')
-            }, 500)
-        },
-        cancelFeedback() {
-            this.showFeedbackBox = false
-            this.feedbackText = ''
         }
     },
     beforeDestroy() {
-        clearInterval(this.streamTimer)
-        clearInterval(this.timingTimer)
+        this.clearStreamTimer()
     }
 }
 </script>
@@ -307,136 +335,55 @@ export default {
 <style scoped>
 .llm-demo {
     max-width: 900px;
-    margin: 32px auto;
-    padding: 0 16px 40px;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    color: #1f2328;
-    box-sizing: border-box;
+    margin: 24px auto 40px;
+    padding: 0 16px;
 }
 
-.card {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
-    padding: 18px 20px 20px;
-    margin-bottom: 18px;
-    box-sizing: border-box;
+.input-card,
+.output-card {
+    margin-bottom: 20px;
 }
 
-.input-card {
-    border-left: 4px solid #1677ff;
+.query-form {
+    margin-bottom: 8px;
 }
 
-.card-title {
-    margin: 0 0 10px;
-    font-size: 18px;
-    font-weight: 600;
-}
-
-.input-row {
+.input-actions {
     display: flex;
     align-items: center;
-    gap: 10px;
-}
-
-.query-input {
-    flex: 1;
-    padding: 8px 10px;
-    border-radius: 8px;
-    border: 1px solid #d0d7de;
-    font-size: 14px;
-    outline: none;
-    transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-.query-input:focus {
-    border-color: #1677ff;
-    box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.18);
-}
-
-.primary-btn {
-    padding: 8px 16px;
-    border-radius: 999px;
-    border: none;
-    background: #1677ff;
-    color: #fff;
-    font-size: 14px;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background 0.15s, opacity 0.15s, transform 0.1s;
-}
-
-.primary-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.primary-btn:not(:disabled):hover {
-    background: #145fcb;
-}
-
-.primary-btn:not(:disabled):active {
-    transform: scale(0.97);
+    gap: 12px;
 }
 
 .tip {
-    margin-top: 6px;
     font-size: 12px;
-    color: #6e7781;
+    color: #888;
 }
 
-.output-card {
-    padding-top: 14px;
-}
-
-/* 顶部工具条 */
-.output-toolbar {
+.output-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+}
+
+.metrics {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     font-size: 12px;
 }
 
-.status-text {
-    color: #6e7781;
+.metric-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
 }
 
-.ghost-btn {
-    padding: 6px 12px;
-    border-radius: 999px;
-    border: 1px solid #d0d7de;
-    background: #f6f8fa;
-    font-size: 13px;
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
+.metric-label {
+    color: #999;
 }
 
-.ghost-btn.small {
-    font-size: 12px;
-    padding: 4px 10px;
-}
-
-.ghost-btn:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
-}
-
-.ghost-btn:not(:disabled):hover {
-    background: #eaeef2;
-}
-
-/* 输出区域 */
-.output-wrapper {
-    background: #f6f8fa;
-    border-radius: 8px;
-    padding: 10px 12px;
-    box-sizing: border-box;
-}
-
-.fixed-height {
-    height: 280px;
-    overflow-y: auto;
+.metric-value {
+    font-weight: 500;
 }
 
 .loading-wrapper {
@@ -452,7 +399,7 @@ export default {
     height: 18px;
     border-radius: 50%;
     border: 2px solid #e0e0e0;
-    border-top-color: #1677ff;
+    border-top-color: #409eff;
     animation: spin 0.7s linear infinite;
 }
 
@@ -462,35 +409,21 @@ export default {
     }
 }
 
+/* 固定高度的输出区域，自动滚动到底部 */
+.output-scroll {
+    border: 1px solid #ebeef5;
+    border-radius: 8px;
+    padding: 10px 12px;
+    height: 260px;
+    overflow-y: auto;
+    background: #fafbfc;
+}
+
 .empty-state {
-    color: #8c959f;
+    color: #999;
     font-size: 13px;
 }
 
-/* 耗时信息 */
-.timing-panel {
-    margin-top: 10px;
-    padding-top: 8px;
-    border-top: 1px dashed #e3e3e3;
-    font-size: 12px;
-    color: #555;
-}
-
-.timing-item {
-    display: flex;
-    gap: 4px;
-    margin-top: 2px;
-}
-
-.timing-item .label {
-    color: #6e7781;
-}
-
-.timing-item .value {
-    font-weight: 500;
-}
-
-/* 点赞 / 点踩 */
 .feedback-actions {
     margin-top: 12px;
     display: flex;
@@ -498,67 +431,26 @@ export default {
     gap: 8px;
 }
 
-.icon-btn {
-    border-radius: 999px;
-    border: 1px solid #d0d7de;
-    padding: 4px 10px;
-    font-size: 13px;
-    background: #f6f8fa;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    transition: background 0.15s, border-color 0.15s, color 0.15s;
-}
-
-.icon-btn:hover {
-    background: #eaeef2;
-}
-
-.icon-btn.active {
-    background: #edf5ff;
-    border-color: #1677ff;
-    color: #1677ff;
-}
-
 .feedback-hint {
     font-size: 12px;
-    color: #22863a;
+    color: #67c23a;
 }
 
-/* 反馈文本框 */
 .feedback-box {
     margin-top: 10px;
 }
 
-.feedback-textarea {
-    width: 100%;
-    min-height: 70px;
-    padding: 8px 10px;
-    border-radius: 8px;
-    border: 1px solid #d0d7de;
-    font-size: 13px;
-    resize: vertical;
-    outline: none;
-    box-sizing: border-box;
-}
-
-.feedback-textarea:focus {
-    border-color: #1677ff;
-    box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.12);
-}
-
 .feedback-btn-row {
-    margin-top: 8px;
+    margin-top: 6px;
     display: flex;
     gap: 8px;
 }
 
-/* Markdown 样式（简单版） */
+/* 简单 markdown 样式 */
 .markdown-body {
     font-size: 14px;
     line-height: 1.6;
-    color: #1f2328;
+    color: #222;
 }
 
 .markdown-body h2 {
@@ -568,22 +460,17 @@ export default {
 
 .markdown-body h3 {
     font-size: 16px;
-    margin: 6px 0 4px;
+    margin: 8px 0 4px;
 }
 
 .markdown-body p {
     margin: 4px 0;
 }
 
-.markdown-body ul,
-.markdown-body ol {
-    margin: 4px 0 4px 20px;
-}
-
 .markdown-body code {
     font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
-    background: #eaeef2;
-    padding: 1px 4px;
+    background: #f6f8fa;
+    padding: 2px 4px;
     border-radius: 4px;
     font-size: 13px;
 }

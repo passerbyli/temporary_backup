@@ -12,7 +12,7 @@ const router = createRouter({
         {
           path: '',
           name: 'home',
-          component: () => import('../views/ai2.vue'),
+          component: () => import('../views/ai3.vue'),
 
           meta: {
             display: true,

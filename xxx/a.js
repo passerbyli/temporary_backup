@@ -65,3 +65,24 @@ processStreamBuffer() {
 
   this.streamBuffer = buf
 }
+
+
+
+copyResult() {
+  const container = this.$refs.outputScroll
+  if (!container) return
+
+  // 只要纯文本（跟用户看到的文字一致，没有 markdown/HTML）
+  const plainText = container.innerText || container.textContent || ''
+
+  if (!plainText.trim()) return
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(plainText).then(
+      () => this.$message.success('复制成功（纯文本）'),
+      () => this.fallbackCopy(plainText)
+    )
+  } else {
+    this.fallbackCopy(plainText)
+  }
+}

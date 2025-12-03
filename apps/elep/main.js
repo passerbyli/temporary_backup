@@ -14,6 +14,24 @@ let isQuiting = false;
 const gotTheLock = app.requestSingleInstanceLock();
 const accelerator = isMac ? 'CommandOrControl+Option+P' : 'CommandOrControl+Alt+P';
 
+const Store = require('electron-store');
+const store = new Store({
+  name: 'my-data', // 自定义存储文件的名称，默认是 'config'
+  encryptionKey: 'aes-256-cbc', // 加密存储的数据
+  cwd: 'some/path', // 自定义存储文件的路径
+  fileExtension: 'json', // 文件扩展名，默认是 'json'
+});
+
+/*****************************************************************************/
+store.set('name', 'xiejie');
+console.log(store.get('name')); // xiejie
+// 还可以设置 JSON 对象某个属性的值
+store.set('foo.bar', 'this is a bar');
+console.log(store.get('foo')); // {bar: "this is a bar"}
+console.log(store.get('aaa')); // undefined
+
+/*****************************************************************************/
+
 function getIconPath() {
   // 开发环境和打包后路径不同
   const iconFile = process.platform === 'win32' ? '512x512.png' : '512x512.png';

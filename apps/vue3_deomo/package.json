@@ -10,7 +10,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "format": "prettier --write --experimental-cli src/"
+    "format": "prettier --write --experimental-cli src/",
+    "release": "node scripts/release.js",
+    "releaseESM": "node scripts/releaseESM.js",
+    "release2": "pnpm build && zip -r dist.zip dist && rm -rf dist/*"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
@@ -21,6 +24,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.2",
+    "archiver": "^7.0.1",
     "prettier": "3.6.2",
     "vite": "^7.2.4",
     "vite-plugin-vue-devtools": "^8.0.5"

@@ -12,7 +12,7 @@
     "preview": "vite preview",
     "format": "prettier --write --experimental-cli src/",
     "release": "node scripts/release.js",
-    "releaseESM": "node scripts/releaseESM.js",
+    "releaseESM": "node scripts/releaseESM_v1.js",
     "release2": "pnpm build && zip -r dist.zip dist && rm -rf dist/*"
   },
   "dependencies": {

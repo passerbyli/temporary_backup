@@ -2,6 +2,23 @@
     <div style="padding:12px;border:1px solid #eee;border-radius:12px;">
         <h2>ChinaCityDetail</h2>
         <p>中国区域：city Detail</p>
+        <p>中国区域：city Detail</p>
+        <p>中国区域：city Detail</p>
+        <p>中国区域：city Detail</p>
+        <p>中国区域：city Detail</p>
+        <p>中国区域：city Detail</p>
+        <p>中国区域：city Detail</p>
+        <p>中国区域：city Detail</p>
+        <p>中国区域：city Detail</p>
+        <p>中国区域：city Detail</p>
+        <p>中国区域：city Detail</p>
+        <p>中国区域：city Detail</p>
+        <p>中国区域：city Detail</p>
+        <p>中国区域：city Detail</p>
+        <p>中国区域：city Detail</p>
+        <p>中国区域：city Detail</p>
+        <p>中国区域：city Detail</p>
+        <p>中国区域：city Detail</p>
         <div>params：{{ params }}</div>
     </div>
 </template>

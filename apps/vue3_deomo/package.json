@@ -18,9 +18,14 @@
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
     "element-plus": "^2.11.4",
+    "file-saver": "^2.0.5",
+    "json-bigint": "^1.0.0",
+    "json5": "^2.2.3",
+    "jszip": "^3.10.1",
     "vue": "^3.5.25",
     "vue-router": "^4.6.3",
-    "vue2": "npm:vue@2.7.16"
+    "vue2": "npm:vue@2.7.16",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.2",

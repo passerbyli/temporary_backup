@@ -121,7 +121,7 @@ export function fetchMenu(areaType) {
       ],
     },
   ]
-  china = []
+  // china = []
   const mock = { china, oversea }
 
   return new Promise((resolve) => setTimeout(() => resolve(mock[areaType] || []), 1200))

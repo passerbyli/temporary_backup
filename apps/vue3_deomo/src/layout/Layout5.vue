@@ -1,39 +1,42 @@
 <template>
   <div class="shell">
-    <!-- 顶部：保持不变 -->
+    <!-- 顶部（48px，全宽，保持不变） -->
     <div class="header">
       <div class="header-left">
         <span class="brand">Demo</span>
         <el-tag size="small" effect="plain">{{ areaType }}</el-tag>
       </div>
+
       <div class="header-right">
         <el-button size="small" text @click="goArea('china')">中国</el-button>
         <el-button size="small" text @click="goArea('oversea')">海外</el-button>
       </div>
     </div>
 
-    <!-- 中间：动态高度（footer 可隐藏） -->
+    <!-- 中间（灰底 + 12px 间距，高度随 footer 动态） -->
     <div class="body" :style="{ height: bodyHeight }">
       <div class="panel">
-        <!-- 左侧：el-tree（折叠时完全隐藏，只留图标按钮） -->
+        <!-- 左侧：el-tree（折叠时完全隐藏，只留把手） -->
         <div class="left-card" :class="{ collapsed: isCollapse }" :style="{ width: asideWidth }">
+          <!-- 展开态：tree 可滚动 -->
           <div class="left-scroll" v-show="!isCollapse">
             <el-skeleton v-if="loading" animated :rows="10" />
 
             <el-tree
               v-else
+              ref="treeRef"
               class="nav-tree"
               :data="menus"
               :props="treeProps"
               node-key="menuId"
-              :default-expanded-keys="defaultExpandedKeys"
+              :default-expanded-keys="expandedKeys"
               :expand-on-click-node="false"
               :highlight-current="true"
               :current-node-key="activeLeftKey"
               @node-click="onTreeNodeClick"
             >
               <template #default="{ node, data }">
-                <!-- 只显示 2 层：node.level 从 1 开始 -->
+                <!-- 只显示两层 -->
                 <span v-if="node.level <= 2" class="tree-label">
                   {{ data.menuName }}
                 </span>
@@ -42,8 +45,12 @@
             </el-tree>
           </div>
 
-          <!-- 折叠/展开把手 -->
-          <button class="collapse-handle" @click="toggleCollapse" :title="isCollapse ? '展开导航' : '收起导航'">
+          <!-- 折叠/展开把手（始终显示） -->
+          <button
+            class="collapse-handle"
+            @click="toggleCollapse"
+            :title="isCollapse ? '展开导航' : '收起导航'"
+          >
             <el-icon>
               <Expand v-if="isCollapse" />
               <Fold v-else />
@@ -51,11 +58,14 @@
           </button>
         </div>
 
-        <!-- 右侧卡片：tabs + 内容 -->
+        <!-- 右侧：tabs + 内容区（左右等高；仅内容滚动） -->
         <div class="right-card">
+          <!-- 保留 router-view（你的结构要求） -->
           <router-view />
 
+          <!-- Tabs 固定在上方，不滚动 -->
           <div class="tabs-bar" v-if="l3Tabs.length || l4Tabs.length">
+            <!-- L3 tabs -->
             <div v-if="l3Tabs.length" class="tab-row">
               <div
                 v-for="t in l3Tabs"
@@ -63,11 +73,13 @@
                 class="tab-item"
                 :class="{ active: String(activeL3Id) === String(t.menuId) }"
                 @click="onClickL3Tab(t)"
+                :title="t.menuName"
               >
                 {{ t.menuName }}
               </div>
             </div>
 
+            <!-- L4 tabs -->
             <div v-if="l4Tabs.length" class="tab-row">
               <div
                 v-for="t in l4Tabs"
@@ -75,12 +87,14 @@
                 class="tab-item"
                 :class="{ active: String(activeLeafId) === String(t.menuId) }"
                 @click="onClickL4Tab(t)"
+                :title="t.menuName"
               >
                 {{ t.menuName }}
               </div>
             </div>
           </div>
 
+          <!-- ✅ 内容区：唯一滚动区域 -->
           <div class="content-scroll">
             <el-card shadow="never" class="content-card">
               <ContentRenderer :node="activeLeafNode" :payload="payload" />
@@ -90,7 +104,7 @@
       </div>
     </div>
 
-    <!-- 底部：保持不变，可隐藏 -->
+    <!-- 底部（48px，全宽，保持不变；可隐藏） -->
     <div v-if="footerVisible" class="footer">
       <div class="footer-inner">{{ footerText }}</div>
     </div>
@@ -100,8 +114,13 @@
 <script>
 import { Fold, Expand } from "@element-plus/icons-vue";
 import { fetchMenu } from "@/services/menu";
-import { findPathById, isLeaf, pickFirstLeaf, pickFirstLeafFromTree } from "@/utils/tree";
 import { normalizePayload } from "@/utils/routePayload";
+import {
+  findPathById,
+  isLeaf,
+  pickFirstLeaf,
+  pickFirstLeafFromTree,
+} from "@/utils/tree";
 import ContentRenderer from "@/views/ContentRenderer.vue";
 
 export default {
@@ -111,21 +130,29 @@ export default {
   data() {
     return {
       isCollapse: false,
-      menus: [],
       loading: false,
+      menus: [],
 
+      // 当前叶子（唯一渲染源）
       activeLeafNode: null,
+
+      // 左侧高亮（深度>2 高亮 L2）
       activeL2Id: "",
 
+      // tabs
       l3Tabs: [],
       l4Tabs: [],
       activeL3Id: "",
       activeLeafId: "",
 
+      // el-tree props：后端字段 child
       treeProps: {
-        children: "child", // ✅ 后端字段 child
+        children: "child",
         label: "menuName",
       },
+
+      // 展开的 keys：当当前节点>=2时，展开路径上的 L1/L2
+      expandedKeys: [],
     };
   },
 
@@ -136,6 +163,8 @@ export default {
     menuId() {
       return this.$route.query.menuId || "";
     },
+
+    // 业务参数：除 menuId 外全部
     payload() {
       return normalizePayload(this.$route.query);
     },
@@ -145,14 +174,9 @@ export default {
       return this.isCollapse ? "44px" : "260px";
     },
 
-    // el-tree 高亮 key：深度>2 高亮 L2
+    // el-tree 当前高亮：深度>2 高亮 L2，否则高亮当前 menuId
     activeLeftKey() {
       return this.activeL2Id || this.menuId || "";
-    },
-
-    // 默认展开：把所有 L1 展开（只显示两层更合理）
-    defaultExpandedKeys() {
-      return (this.menus || []).map((x) => x.menuId);
     },
 
     footerInfo() {
@@ -170,7 +194,7 @@ export default {
       return this.footerInfo.text;
     },
 
-    // 中间高度随 footer 显示变化
+    // 中间高度根据 footer 是否展示动态变化
     bodyHeight() {
       const footerH = this.footerVisible ? 48 : 0;
       return `calc(100vh - 48px - ${footerH}px)`;
@@ -185,8 +209,20 @@ export default {
   methods: {
     toggleCollapse() {
       this.isCollapse = !this.isCollapse;
+
+      // 折叠->展开时，恢复展开状态与高亮
+      if (!this.isCollapse) {
+        this.$nextTick(() => {
+          const tree = this.$refs.treeRef;
+          if (!tree) return;
+          tree.setExpandedKeys(this.expandedKeys || []);
+          if (this.activeLeftKey) tree.setCurrentKey(this.activeLeftKey);
+        });
+      }
     },
+
     goArea(type) {
+      // 保留业务参数（除 menuId 也保留），只切 path
       this.$router.push({ path: `/${type}`, query: { ...this.$route.query } });
     },
 
@@ -195,6 +231,7 @@ export default {
       this.menus = await fetchMenu(this.areaType);
       this.loading = false;
 
+      // 无 menuId：默认第一个叶子
       if (!this.menuId) {
         const firstLeaf = pickFirstLeafFromTree(this.menus);
         if (firstLeaf) {
@@ -205,6 +242,7 @@ export default {
         }
         return;
       }
+
       this.applyMenuId();
     },
 
@@ -212,6 +250,8 @@ export default {
       if (!this.menus.length) return;
 
       const path = findPathById(this.menus, this.menuId);
+
+      // menuId 不存在：回退第一个叶子
       if (!path) {
         const firstLeaf = pickFirstLeafFromTree(this.menus);
         if (firstLeaf) {
@@ -225,7 +265,7 @@ export default {
 
       const last = path[path.length - 1];
 
-      // 非叶子 -> replace 到下一个叶子
+      // 指向非叶子：replace 到其下第一个叶子
       if (!isLeaf(last)) {
         const leaf = pickFirstLeaf(last);
         if (leaf) {
@@ -237,39 +277,47 @@ export default {
         return;
       }
 
-      // 叶子：唯一渲染源
+      // ✅ 叶子：唯一渲染源
       this.activeLeafNode = last;
       this.activeLeafId = last.menuId;
 
-      // depth>2 高亮 L2
+      // depth>2 高亮 L2（祖先）
       this.activeL2Id = path.length > 2 && path[1] ? path[1].menuId : "";
 
+      // externalLink：自动打开（如不需要自动打开可删除）
       if (last.type === "externalLink" && last.link) {
         window.open(last.link, "_blank", "noopener,noreferrer");
       }
 
-      // tabs：L3/L4 来自 path（child 字段）
+      // Tabs（使用 child 字段）
       const depth = path.length;
+
       if (depth <= 2) {
         this.l3Tabs = [];
         this.l4Tabs = [];
         this.activeL3Id = "";
-        return;
+      } else {
+        const l2Node = path[1]; // L2
+        this.l3Tabs = l2Node && l2Node.child ? l2Node.child : [];
+
+        const l3Node = depth === 3 ? last : path[2]; // L3
+        this.activeL3Id = l3Node ? l3Node.menuId : "";
+
+        this.l4Tabs = l3Node && l3Node.child && l3Node.child.length ? l3Node.child : [];
       }
 
-      const l2Node = path[1];
-      this.l3Tabs = l2Node && l2Node.child ? l2Node.child : [];
+      // ✅ 左侧树展开：当前节点层级>=2（即 path.length>=2）展开路径上的 L1/L2
+      this.syncTreeExpand(path);
 
-      const l3Node = depth === 3 ? last : path[2];
-      this.activeL3Id = l3Node ? l3Node.menuId : "";
-
-      this.l4Tabs = l3Node && l3Node.child && l3Node.child.length ? l3Node.child : [];
+      // ✅ 可选：滚动左侧让高亮节点可见（展开态才做）
+      this.scrollTreeToCurrent();
     },
 
-    // el-tree 节点点击：永远落到该节点下第一个叶子
+    // 树节点点击：只展示两层，但点击时要落到该节点下第一个叶子
     onTreeNodeClick(data, node) {
-      // node.level > 2 的节点在 UI 已隐藏，但保险起见仍处理
+      // data 是被点击的节点（L1/L2）
       const leaf = pickFirstLeaf(data) || data;
+
       this.$router.push({
         path: `/${this.areaType}`,
         query: { ...this.$route.query, menuId: leaf.menuId },
@@ -290,6 +338,43 @@ export default {
         query: { ...this.$route.query, menuId: l4.menuId },
       });
     },
+
+    // ✅ 关键：当当前节点>=2时，展开路径上的 L1/L2，并设置 currentKey
+    syncTreeExpand(path) {
+      if (!path || !path.length) return;
+
+      // path.length>=2 说明“当前节点层级>=2”（L2/L3/L4）
+      // 至少展开 L1；如果存在 L2 也一起展开（更符合“对应节点都要展开”）
+      const keys = [];
+      if (path[0]) keys.push(path[0].menuId);
+      if (path.length >= 2 && path[1]) keys.push(path[1].menuId);
+
+      this.expandedKeys = keys;
+
+      // 折叠态不需要操作 tree
+      if (this.isCollapse) return;
+
+      this.$nextTick(() => {
+        const tree = this.$refs.treeRef;
+        if (!tree) return;
+
+        tree.setExpandedKeys(keys);
+        if (this.activeLeftKey) tree.setCurrentKey(this.activeLeftKey);
+      });
+    },
+
+    // ✅ 可选：滚动左侧树到当前高亮节点
+    scrollTreeToCurrent() {
+      if (this.isCollapse) return;
+      this.$nextTick(() => {
+        const tree = this.$refs.treeRef;
+        if (!tree || !tree.$el) return;
+        const cur = tree.$el.querySelector(".is-current");
+        if (cur && cur.scrollIntoView) {
+          cur.scrollIntoView({ block: "center" });
+        }
+      });
+    },
   },
 };
 </script>
@@ -301,7 +386,7 @@ export default {
   background: #f2f3f5;
 }
 
-/* 顶部/底部不变 */
+/* 顶部/底部保持不变 */
 .header {
   height: 48px;
   padding: 0 16px;
@@ -364,7 +449,7 @@ export default {
 .left-scroll {
   height: 100%;
   overflow: auto;
-  padding: 8px 8px 56px;
+  padding: 8px 8px 56px; /* 给把手按钮留空间 */
   box-sizing: border-box;
 }
 
@@ -400,6 +485,10 @@ export default {
   right: auto;
   bottom: auto;
 }
+.collapse-handle:hover {
+  border-color: var(--el-color-primary-light-5);
+  color: var(--el-color-primary);
+}
 
 /* 右侧卡片 */
 .right-card {
@@ -418,7 +507,10 @@ export default {
 }
 
 /* div tabs */
-.tabs-bar { flex: 0 0 auto; margin-bottom: 8px; }
+.tabs-bar {
+  flex: 0 0 auto;
+  margin-bottom: 8px;
+}
 .tab-row {
   display: flex;
   gap: 8px;

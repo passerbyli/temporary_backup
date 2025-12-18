@@ -1,0 +1,147 @@
+很好，这里关键信息很清楚了 👍
+你现在的真实场景是：
+
+原始逻辑：
+parse.set($.result.data, $.result.authGroup[0])
+
+现在 不能直接 set，因为 authGroup 是数组，需要：
+
+先把 $.result.authGroup 做“合并 + 按 code 去重”
+再把处理后的结果 set 到 $.result.data
+而你的 mergeDedupByCode 入参是 String
+
+下面我给你一个最贴近你现有代码、最容易写单测的改造方案。
+
+⸻
+
+一、整体思路（非常重要）
+
+JsonPath 只做三件事：
+	1.	读 authGroup
+	2.	写 data
+	3.	不中途做复杂逻辑
+
+复杂逻辑全部交给：
+
+👉 mergeDedupByCode(String jsonArray)
+
+⸻
+
+二、推荐实现（最简单、最干净）
+
+假设你用的是 jayway JsonPath 的 DocumentContext
+
+1️⃣ 原始 JSON
+
+String json; // 原始接口返回
+DocumentContext parse = JsonPath.parse(json);
+
+
+⸻
+
+2️⃣ 取出 authGroup（数组 → String）
+
+Object authGroupObj = parse.read("$.result.authGroup");
+
+// 转成 JSON 字符串，作为 mergeDedupByCode 入参
+ObjectMapper mapper = new ObjectMapper();
+String authGroupJson = mapper.writeValueAsString(authGroupObj);
+
+⚠️ 这里 不要直接 toString()
+一定要用 ObjectMapper.writeValueAsString
+
+⸻
+
+3️⃣ 调用你的合并去重方法
+
+String mergedJson = AreaJsonMerger.mergeDedupByCode(authGroupJson);
+
+此时 mergedJson 已经是：
+
+{
+  "region": [...],
+  "country": [...],
+  "repOffice": [...]
+}
+
+
+⸻
+
+4️⃣ set 回 $.result.data
+
+Object mergedObj = mapper.readValue(mergedJson, Object.class);
+
+parse.set("$.result.data", mergedObj);
+
+
+⸻
+
+5️⃣ 最终结果
+
+String finalJson = parse.jsonString();
+
+
+⸻
+
+三、完整示例（连起来看更清楚）
+
+ObjectMapper mapper = new ObjectMapper();
+DocumentContext parse = JsonPath.parse(json);
+
+// 1. 读 authGroup
+Object authGroup = parse.read("$.result.authGroup");
+
+// 2. authGroup → String
+String authGroupJson = mapper.writeValueAsString(authGroup);
+
+// 3. 合并 + 去重
+String mergedJson = AreaJsonMerger.mergeDedupByCode(authGroupJson);
+
+// 4. set 到 data
+Object mergedObj = mapper.readValue(mergedJson, Object.class);
+parse.set("$.result.data", mergedObj);
+
+// 5. 输出
+String finalJson = parse.jsonString();
+
+
+⸻
+
+四、为什么这是“最优解”
+
+✅ 简单
+	•	JsonPath 只管路径
+	•	Jackson 只管 JSON
+
+✅ 易测试
+	•	mergeDedupByCode(String) 是纯函数
+	•	单测不依赖 JsonPath
+
+✅ 易维护
+	•	将来 authGroup 结构变了，只改合并逻辑
+
+⸻
+
+五、单元测试该怎么写（建议）
+
+只测这一行核心逻辑 👇
+
+String mergedJson = AreaJsonMerger.mergeDedupByCode(authGroupJson);
+
+断言：
+
+JsonNode out = mapper.readTree(mergedJson);
+assertEquals(2, out.get("repOffice").size());
+
+👉 不要在单测里测 JsonPath 的 set/read
+（那是第三方库，没必要）
+
+⸻
+
+六、一句话总结
+
+JsonPath = 定位 & 赋值
+Jackson = 数据加工
+mergeDedupByCode = 可测试的核心业务
+
+如果你愿意，我可以帮你把这段代码封装成一个 replaceResultData() 工具方法，让你业务代码只剩一行。

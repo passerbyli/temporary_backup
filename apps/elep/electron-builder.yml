@@ -1,7 +1,12 @@
 appId: com.example.eleplus
 productName: elep
 copyright: Copyright © 2025 YourName
-npmRebuild: false
+
+
+directories:
+  output: dist
+  buildResources: build
+
 files:
   - dist/**/*
   - electron/**/*
@@ -15,30 +20,50 @@ files:
   - '!**/node_modules/*/test'
   - '!**/node_modules/*/docs'
 
+asar: true
+
 extraResources:
   - from: public
     to: public
     filter:
       - '**/*'
 
-directories:
-  output: dist
-
-asar: true
-
-mac:
+# ===== Windows =====
+win:
   target:
-    - dmg
-    - zip
-  icon: public/icons/icon.icns
-  artifactName: '${productName}-${version}-mac-${arch}.${ext}'
-  hardenedRuntime: false
-  gatekeeperAssess: false
-  sign: false
+    - target: nsis
+      arch:
+        - x64
+  artifactName: "${productName}-Setup-${version}-${arch}.${ext}"
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: "${productName}"
+
+# 可选：提升兼容性（不想强制管理员就别开）
+# requestedExecutionLevel: "asInvoker"
+
+# ===== macOS =====
+mac:
+  category: public.app-category.utilities
+  target:
+    - target: zip   # ✅ electron-updater 需要（自动更新用）
+      arch:
+        - x64
+        - arm64
+    - target: dmg   # ✅ 给“无签名时手动更新”用
+      arch:
+        - x64
+        - arm64
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+
 dmg:
-  sign: false
-  background: public/icons/1024x1024.png
-  iconSize: 100
+  title: "${productName} ${version}"
+  icon: "build/icon.icns"
   contents:
     - x: 130
       y: 220
@@ -48,17 +73,15 @@ dmg:
       type: link
       path: /Applications
 
-win:
-  target:
-    - nsis
-  icon: public/icons/icon.ico
-  artifactName: '${productName}-${version}-win.${ext}'
 
-nsis:
-  oneClick: false
-  allowToChangeInstallationDirectory: true
-  createDesktopShortcut: true
-  createStartMenuShortcut: true
 
-publish: null
-generateUpdatesFilesForAllChannels: false
+# ===== 更新相关 =====
+# 不在这里写 publish，改为运行时 setFeedURL 指向内网 express 的 /win/ 或 /mac/
+publish: []
+
+# ===== 其他常用项（可按需删改）=====
+compression: maximum
+
+# 生成一些更通用的包名/兼容行为
+npmRebuild: false
+buildDependenciesFromSource: false

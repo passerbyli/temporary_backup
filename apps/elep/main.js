@@ -1,5 +1,8 @@
 /* eslint-disable no-undef */
 const { app, BrowserWindow, ipcMain, globalShortcut, Menu, Tray, nativeImage } = require('electron');
+const { shell } = require('electron');
+
+const { autoUpdater } = require('electron-updater');
 const path = require('node:path');
 const { registerAllIpc, ipcHandle } = require('./electron/ipc/index');
 const spotlight = require('./plugins/chrome/bookmarks');
@@ -21,6 +24,152 @@ const store = new Store({
   cwd: 'some/path', // 自定义存储文件的路径
   fileExtension: 'json', // 文件扩展名，默认是 'json'
 });
+
+/*****************************************************************************/
+
+const UPDATE_SERVER_BASE = 'http://192.168.1.10:3000'; // TODO: 改成你的内网更新服务器地址
+
+function getUpdateFeedURL() {
+  if (process.platform === 'win32') return `${UPDATE_SERVER_BASE}/win/`;
+  if (process.platform === 'darwin') return `${UPDATE_SERVER_BASE}/mac/`;
+  return UPDATE_SERVER_BASE;
+}
+
+/**
+ * macOS 无签名时更推荐“提示下载 dmg 手动安装”
+ * 这里默认使用你 electron-builder.yml 的 artifactName:
+ *   mac: "${productName}-${version}-${arch}.dmg"
+ *
+ * 注意：info.files 里不一定包含 dmg（更新用的是 zip），所以我们用规则拼一个 dmg 名称。
+ * 如果你的 dmg 文件命名不同，把这里的拼接规则改掉即可。
+ */
+function getMacDmgUrl(info) {
+  const version = info?.version;
+  if (!version) return null;
+
+  // 尝试从 info 找架构（有时拿不到）
+  // 取不到就不带 arch，改成你服务器真实文件名也可以
+  // 你的 yml 是带 arch 的，所以这里给个简单策略：
+  const arch = process.arch === 'arm64' ? 'arm64' : 'x64';
+
+  // productName：尽量用 app.getName()，但它未必等于 productName
+  // 更稳：直接写死成你 productName，比如 "MyApp"
+  const productName = app.getName() || 'MyApp';
+
+  const fileName = `${productName}-${version}-${arch}.dmg`;
+  return `${UPDATE_SERVER_BASE}/mac/${encodeURIComponent(fileName)}`;
+}
+
+function setupAutoUpdate() {
+  // 不强制更新：只提示
+  autoUpdater.autoDownload = false;
+
+  // 指向内网 generic 更新源
+  autoUpdater.setFeedURL({
+    provider: 'generic',
+    url: getUpdateFeedURL(),
+  });
+
+  autoUpdater.on('checking-for-update', () => {
+    console.log('[updater] checking for update...');
+  });
+
+  autoUpdater.on('update-available', async (info) => {
+    console.log('[updater] update available:', info?.version);
+
+    // mac：无签名更稳的做法——提示用户下载 dmg 手动装
+    if (process.platform === 'darwin') {
+      const dmgUrl = getMacDmgUrl(info);
+
+      const r = await dialog.showMessageBox({
+        type: 'info',
+        title: '发现新版本',
+        message: `发现新版本 ${info?.version || ''}。是否下载更新包（DMG）？`,
+        detail: '当前未做 Apple Developer 签名，推荐手动安装：下载 DMG 后拖拽到 Applications 覆盖安装。',
+        buttons: ['下载', '稍后'],
+        defaultId: 0,
+        cancelId: 1,
+        noLink: true,
+      });
+
+      if (r.response === 0) {
+        if (!dmgUrl) {
+          dialog.showMessageBox({
+            type: 'error',
+            title: '下载失败',
+            message: '无法生成 DMG 下载地址（版本号缺失）。',
+          });
+          return;
+        }
+        shell.openExternal(dmgUrl);
+      }
+      return;
+    }
+
+    // Windows：提示后下载
+    const r = await dialog.showMessageBox({
+      type: 'info',
+      title: '发现新版本',
+      message: `发现新版本 ${info?.version || ''}，是否下载？`,
+      buttons: ['下载', '稍后'],
+      defaultId: 0,
+      cancelId: 1,
+      noLink: true,
+    });
+
+    if (r.response === 0) {
+      autoUpdater.downloadUpdate();
+    }
+  });
+
+  autoUpdater.on('update-not-available', () => {
+    console.log('[updater] no updates.');
+    // 不提示用户，静默即可（你也可以在“手动检查更新”时提示）
+  });
+
+  autoUpdater.on('download-progress', (p) => {
+    // percent / transferred / total / bytesPerSecond
+    console.log(`[updater] download: ${Math.round(p.percent)}% (${p.transferred}/${p.total})`);
+  });
+
+  autoUpdater.on('update-downloaded', async () => {
+    console.log('[updater] update downloaded.');
+
+    // Windows：下载完成后提示安装
+    const r = await dialog.showMessageBox({
+      type: 'info',
+      title: '更新已就绪',
+      message: '更新已下载完成，是否立即安装并重启？',
+      buttons: ['安装并重启', '稍后'],
+      defaultId: 0,
+      cancelId: 1,
+      noLink: true,
+    });
+
+    if (r.response === 0) {
+      // true,true 更偏“干净退出后安装”
+      autoUpdater.quitAndInstall(true, true);
+    }
+  });
+
+  autoUpdater.on('error', (err) => {
+    console.error('[updater] error:', err);
+    // 不强制弹窗，避免打扰；你也可以仅在用户手动检查时弹
+  });
+}
+
+/**
+ * 立即检查更新（你可以在菜单“检查更新”里调用它）
+ */
+function checkForUpdates() {
+  try {
+    autoUpdater.checkForUpdates();
+  } catch (e) {
+    console.error('[updater] checkForUpdates failed:', e);
+  }
+}
+
+/*****************************************************************************/
 
 /*****************************************************************************/
 store.set('name', 'xiejie');
@@ -202,6 +351,8 @@ if (!gotTheLock) {
 
   // 创建窗口
   app.whenReady().then(async () => {
+    setupAutoUpdate();
+    setTimeout(checkForUpdates, 3000);
     registerAllIpc(ipcMain);
     createWindow();
     if (process.platform === 'win32') {

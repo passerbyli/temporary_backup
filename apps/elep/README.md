@@ -41,3 +41,10 @@ pnpm install --unsafe-perm
 USING PERIODIC COMMIT 10 LOAD CSV FROM "file:///triples.csv" AS line create (a:actors{personId:line[0],name:line[1],type:line[2]})
 
 安装后的app，点击菜单的quit elep无法退出，只能强制在force quit里处理
+
+
+### Package Electron App for macOS
+```
+rm -rf dist
+pnpm run release:mac -- --debug
+```

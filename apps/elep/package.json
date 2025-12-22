@@ -19,7 +19,7 @@
     "start:win": "chcp 65001 && nodemon NODE_ENV=development",
     "start:mac": "nodemon --exec NODE_ENV=development electron .  --watch ./ --ext .js",
     "startAll": "concurrently \"pnpm run dev\" \"pnpm run start:mac\"",
-    "release:mac": "electron-builder --mac --arm64 --publish never",
+    "release:mac": "electron-builder --mac --arm64 --publish always",
     "release:win": "electron-builder --win --publish never",
     "release:all": "electron-builder --mac --win --publish never",
     "build-only": "vite build",

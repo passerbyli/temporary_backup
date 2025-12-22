@@ -8,17 +8,23 @@ directories:
   buildResources: build
 
 files:
-  - dist/**/*
-  - electron/**/*
-  - pages/**/*
-  - plugins/**/*
-  - public
-  - preload.js
-  - main.js
-  - package.json
-  - '!**/node_modules/.bin'
-  - '!**/node_modules/*/test'
-  - '!**/node_modules/*/docs'
+  - filter:
+      - electron/**/*
+      - pages/**/*
+      - plugins/**/*
+      - public
+      - preload.js
+      - main.js
+      - package.json
+      - '!**/node_modules/**'
+      - '!**/.pnpm/**'
+      - '!**/.turbo/**'
+      - '!**/.cache/**'
+      - '!**/dist/**'
+      - '!**/out/**'
+      - '!**/build/**'       # buildResources 用 directories.buildResources 处理，不要塞进 app
+      - '!**/.git/**'
+      - '!**/*.map'
 
 asar: true
 
@@ -49,25 +55,18 @@ nsis:
 
 # ===== macOS =====
 mac:
-  category: public.app-category.utilities
   target:
     - target: zip   # ✅ electron-updater 需要（自动更新用）
-      arch:
-        - x64
-        - arm64
-    - target: dmg   # ✅ 给“无签名时手动更新”用
-      arch:
-        - x64
-        - arm64
+      arch: [arm64]
   artifactName: "${productName}-${version}-${arch}.${ext}"
 
 dmg:
-  title: "${productName} ${version}"
-  icon: "build/icon.icns"
+  background: null
   contents:
     - x: 130
       y: 220
       type: file
+      path: elep.app
     - x: 410
       y: 220
       type: link
@@ -77,7 +76,10 @@ dmg:
 
 # ===== 更新相关 =====
 # 不在这里写 publish，改为运行时 setFeedURL 指向内网 express 的 /win/ 或 /mac/
-publish: []
+
+publish:
+  - provider: generic
+    url: "http://127.0.0.1/placeholder"
 
 # ===== 其他常用项（可按需删改）=====
 compression: maximum

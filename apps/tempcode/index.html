@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>主体内容 Demo</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <style>
+    html, body { height: 100%; margin: 0; }
+    * { box-sizing: border-box; }
+
+    /* 主体内容容器：外层必须给它确定高度（这里 demo 用 100%） */
+    .content {
+      height: 100%;
+      padding: 12px;
+      background: #0b1c2d;
+      color: #fff;
+      overflow: hidden;
+      display: grid;
+      gap: 12px;
+
+      /* 上:下 = 588:162 （a+b : d层） */
+      grid-template-rows: 588fr 162fr;
+
+      font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    /* 上层：左(a,b) + 右(c) */
+    .top {
+      min-height: 0;
+      display: grid;
+      gap: 12px;
+      grid-template-columns: 240px 1fr;
+    }
+
+    /* 左侧：a : b = 220 : 368 */
+    .top-left {
+      min-height: 0;
+      display: grid;
+      gap: 12px;
+      grid-template-rows: 220fr 368fr;
+    }
+
+    /* 右侧 c（地图容器） */
+    .c {
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      background: rgba(255,255,255,0.04);
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    #map { width: 100%; height: 100%; }
+
+    /* 下层：d e f 1:1:1 */
+    .bottom {
+      min-height: 0;
+      display: grid;
+      gap: 12px;
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    /* 指标卡片：标题 + 数值 + 名称 */
+    .card {
+      min-height: 0;
+      background: rgba(255,255,255,0.06);
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 12px 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .title {
+      font-size: 13px;
+      opacity: 0.85;
+      margin-bottom: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .value {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .label {
+      margin-top: 6px;
+      font-size: 12px;
+      opacity: 0.75;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="content">
+    <!-- 上层 -->
+    <div class="top">
+      <div class="top-left">
+        <div class="card a">
+          <div class="title">模块 A</div>
+          <div class="value">128</div>
+          <div class="label">在线设备数</div>
+        </div>
+        <div class="card b">
+          <div class="title">模块 B</div>
+          <div class="value">98.6%</div>
+          <div class="label">系统可用率</div>
+        </div>
+      </div>
+
+      <div class="c">
+        <div id="map"></div>
+      </div>
+    </div>
+
+    <!-- 下层 -->
+    <div class="bottom">
+      <div class="card d">
+        <div class="title">模块 D</div>
+        <div class="value">12,345</div>
+        <div class="label">今日访问量</div>
+      </div>
+      <div class="card e">
+        <div class="title">模块 E</div>
+        <div class="value">356</div>
+        <div class="label">异常事件</div>
+      </div>
+      <div class="card f">
+        <div class="title">模块 F</div>
+        <div class="value">87%</div>
+        <div class="label">处理完成率</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const el = document.getElementById('map');
+    const chart = echarts.init(el);
+
+    fetch('https://geo.datav.aliyun.com/areas_v3/bound/geojson?code=100000')
+      .then(r => r.json())
+      .then(geoJson => {
+        echarts.registerMap('china', geoJson);
+        chart.setOption({
+          geo: {
+            map: 'china',
+            roam: true,
+            zoom: 1.15,
+            itemStyle: { areaColor: '#1d5e98', borderColor: '#4fc3ff' },
+            emphasis: { itemStyle: { areaColor: '#2fa4e7' } }
+          },
+          series: []
+        });
+      });
+
+    new ResizeObserver(() => chart.resize()).observe(el);
+  </script>
+</body>
+</html>

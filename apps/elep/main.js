@@ -328,6 +328,15 @@ function createWindow() {
   });
 }
 
+function initUpdater() {
+  if (!app.isPackaged) {
+    console.log('[updater] skip in dev mode');
+    return;
+  }
+  setupUpdater();
+  autoUpdater.checkForUpdates();
+}
+
 if (!gotTheLock) {
   // 已经有一个实例在运行，退出当前进程
   app.quit();
@@ -343,8 +352,9 @@ if (!gotTheLock) {
 
   // 创建窗口
   app.whenReady().then(async () => {
-    setupAutoUpdate();
-    setTimeout(checkForUpdates, 3000);
+    initUpdater();
+    // setupAutoUpdate();
+    // setTimeout(checkForUpdates, 3000);
     registerAllIpc(ipcMain);
     createWindow();
     if (process.platform === 'win32') {

@@ -109,6 +109,52 @@ function checkForUpdates() {
   }
 }
 
+/**
+
+
+const UPDATE_SERVER_BASE = "http://192.168.1.10:3000";
+
+function getFeedURL() {
+  if (process.platform === "win32") return `${UPDATE_SERVER_BASE}/win/`;
+  if (process.platform === "darwin") return `${UPDATE_SERVER_BASE}/mac/`;
+  return UPDATE_SERVER_BASE;
+}
+
+function setupUpdater() {
+  autoUpdater.autoDownload = false;
+
+  autoUpdater.setFeedURL({ provider: "generic", url: getFeedURL() });
+
+  autoUpdater.on("update-available", async (info) => {
+    const r = await dialog.showMessageBox({
+      type: "info",
+      title: "发现新版本",
+      message: `发现新版本 ${info.version}，是否下载？`,
+      buttons: ["下载", "稍后"],
+      defaultId: 0,
+      cancelId: 1,
+      noLink: true,
+    });
+    if (r.response === 0) autoUpdater.downloadUpdate();
+  });
+
+  autoUpdater.on("update-downloaded", async () => {
+    const r = await dialog.showMessageBox({
+      type: "info",
+      title: "更新已就绪",
+      message: "更新已下载完成，是否立即安装并重启？",
+      buttons: ["安装并重启", "稍后"],
+      defaultId: 0,
+      cancelId: 1,
+      noLink: true,
+    });
+    if (r.response === 0) autoUpdater.quitAndInstall(true, true);
+  });
+
+  autoUpdater.on("error", (e) => console.error("[updater] error:", e));
+}
+
+ */
 /*****************************************************************************/
 
 /*****************************************************************************/
@@ -308,7 +354,7 @@ if (!gotTheLock) {
     if (!app.isPackaged) {
       autoUpdater.forceDevUpdateConfig = true;
     }
-    
+
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {
         createWindow();

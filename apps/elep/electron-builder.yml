@@ -55,6 +55,7 @@ nsis:
 
 # ===== macOS =====
 mac:
+  bundleIdentifier: com.example.eleplus
   target:
     - target: zip   # ✅ electron-updater 需要（自动更新用）
       arch: [arm64]

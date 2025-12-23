@@ -102,6 +102,8 @@ import { defaultForm } from '../services/defaultForm.ts';
 import { login, changeRole } from '../services/authService.ts';
 import MenuItem from './MenuItem.vue'; // 递归组件
 
+
+
 const isLogin = ref(false);
 let form = reactive(structuredClone(defaultForm));
 const dialogVisible = ref(false);
@@ -117,6 +119,8 @@ const userinfo = ref({
 
 onMounted(async () => {
   const config = await loadConfig();
+
+
 
   menuPosition.value = config.global.menuPosition || 'top';
   form.value = Object.assign(form, defaultForm, config.global.auth);

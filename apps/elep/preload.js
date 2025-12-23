@@ -137,3 +137,21 @@ contextBridge.exposeInMainWorld('bookmarksApi', {
   load: (profileName) => ipcRenderer.invoke('bookmarks:load', profileName),
   openExternal: (url) => ipcRenderer.invoke('bookmarks:openExternal', url),
 });
+
+function send(level, message, meta) {
+  return ipcRenderer.invoke('log:write', { level, message, meta });
+}
+
+contextBridge.exposeInMainWorld('logger', {
+  info: (message, meta) => send('info', message, meta),
+  warn: (message, meta) => send('warn', message, meta),
+  error: (message, meta) => send('error', message, meta),
+  debug: (message, meta) => send('debug', message, meta),
+
+  // 方便统一用一个方法
+  log: (level, message, meta) => send(level, message, meta),
+});
+
+contextBridge.exposeInMainWorld('logTools', {
+  openLogDir: () => ipcRenderer.invoke('log:openDir'),
+});

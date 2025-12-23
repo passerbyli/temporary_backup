@@ -20,6 +20,9 @@ if (window.electron) {
     console.log('主窗口收到 navigate:', route);
     router.push({ name: route }); // 在主窗口跳转
   });
+
+  // 全局注入：this.$log / 组合式也可用
+  app.config.globalProperties.$log = window.logger;
 }
 
 app.mount('#app');

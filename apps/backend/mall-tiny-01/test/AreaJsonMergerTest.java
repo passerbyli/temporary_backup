@@ -35,26 +35,3 @@ class AreaJsonMergerTest {
         assertEquals("DE-BE", out.at("/repOffice/1/code").asText());
     }
 }
-
-
-/**
-List<Map<String, Object>> regions =
-        JsonPath.read(json, "$[*].region[*]");
-List<Map<String, Object>> countries =
-        JsonPath.read(json, "$[*].country[*]");
-List<Map<String, Object>> offices =
-        JsonPath.read(json, "$[*].repOffice[*]");
-
-Map<String, Map<String, Object>> regionMap = new LinkedHashMap<>();
-for (Map<String, Object> r : regions) {
-    regionMap.putIfAbsent((String) r.get("code"), r);
-}
-
-// country / repOffice 再写两遍...
-
-Map<String, Object> result = Map.of(
-    "region", regionMap.values(),
-    "country", countryMap.values(),
-    "repOffice", officeMap.values()
-);
- */

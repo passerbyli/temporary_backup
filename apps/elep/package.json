@@ -5,8 +5,8 @@
     "name": "你的名字",
     "email": "you@example.com"
   },
-  "version": "0.0.1",
   "private": true,
+  "version": "0.0.1",
   "main": "main.js",
   "scripts": {
     "build": "run-p type-check \"build-only {@}\" --",

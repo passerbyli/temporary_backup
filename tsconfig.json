@@ -8,15 +8,15 @@
             "esnext"
         ],
         "sourceMap": true,
-        "declaration": true,
+        "declaration": true, // 生成声明文件
         "declarationMap": true,
-        "noUncheckedIndexedAccess": true,
-        "exactOptionalPropertyTypes": true,
+        "noUncheckedIndexedAccess": true, // 允许对索引签名为必填的索引类型进行赋值
+        "exactOptionalPropertyTypes": true, // 允许对可选属性进行赋值"
         "verbatimModuleSyntax": false,
         "moduleResolution": "bundler",
-        "isolatedModules": true,
-        "noUncheckedSideEffectImports": true,
-        "removeComments": true,
+        "isolatedModules": true, // 启用严格模块检查
+        "noUncheckedSideEffectImports": true, // 允许对未检查的导入进行赋值
+        "removeComments": true, // 编译结果去除注释
         "moduleDetection": "force",
         "skipLibCheck": true,
         "strict": true

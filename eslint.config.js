@@ -1,11 +1,11 @@
 import { defineConfig } from 'eslint/config';
-import js from '@eslint/js';
+import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import vuePlugin from 'eslint-plugin-vue';
-import prettierPlugin from 'eslint-plugin-prettier';
+import eslintPluginPrettier from 'eslint-plugin-prettier';
+import eslintPluginVue from 'vue-eslint-parser';
 import globals from 'globals';
 import eslintConfigPrettier from 'eslint-config-prettier';
-import vueParser from 'vue-eslint-parser';
 
 const ignores = ['**/node_modules/**', '**/dist/**', '**/build/**', '.**', 'scripts/**', '**/*.d.tsx'];
 
@@ -18,9 +18,9 @@ export default defineConfig([
   {
     ignores,
     files: ['**/*.{js,cjs,mjs,ts,tsx,jsx,vue}'],
-    extends: [js.configs.recommended, ...tseslint.configs.recommended, eslintConfigPrettier],
+    extends: [eslint.configs.recommended, ...tseslint.configs.recommended, eslintConfigPrettier],
     plugins: {
-      prettier: prettierPlugin,
+      prettier: eslintPluginPrettier,
     },
     languageOptions: {
       ecmaVersion: 'latest',
@@ -43,7 +43,7 @@ export default defineConfig([
     files: frontendGlobs,
     // Vue SFC 需要 vue-eslint-parser，并把 TS 解析器挂到 parserOptions.parser
     languageOptions: {
-      parser: vueParser,
+      parser: eslintPluginVue,
       parserOptions: {
         parser: tseslint.parser,
         ecmaVersion: 'latest',

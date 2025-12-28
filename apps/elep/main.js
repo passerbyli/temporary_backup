@@ -1,18 +1,29 @@
 /* eslint-disable no-undef */
 const { app, BrowserWindow, ipcMain, globalShortcut, Menu, Tray, nativeImage, dialog, shell } = require('electron');
 const { initLogger } = require('./electron/logger');
-const log = initLogger({ level: 'info' });
 const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
 const path = require('node:path');
 const { registerAllIpc, ipcHandle } = require('./electron/ipc/index');
 const spotlight = require('./plugins/chrome/bookmarks');
 const spotlightRouter = require('./services/spotlight');
+const http = require('http');
+const https = require('https');
+const log = initLogger({ level: 'info' });
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 const isMac = process.platform === 'darwin';
 
-const http = require('http');
-const https = require('https');
+let mainWindow; // 你的主窗口引用
+let updateWindow = null; // 更新UI窗口
+let downloading = false;
+
+let win = null;
+let progressWin = null;
+let tray; // ← 保持引用
+let spotlightWin = null;
+let isQuitting = false;
+const accelerator = isMac ? 'CommandOrControl+Option+P' : 'CommandOrControl+Alt+P';
+
 
 // 让 electron-updater 也写进同一份日志
 autoUpdater.logger = log;
@@ -38,20 +49,9 @@ ipcMain.handle('log:write', (_e, payload) => {
   }
 });
 
-// const UPDATE_SERVER_BASE = 'http://192.168.1.10:3000'; // 内网更新服务器
-let mainWindow; // 你的主窗口引用
-let updateWindow = null; // 更新UI窗口
-let downloading = false;
 
-
-let win = null;
-let progressWin = null;
-let tray; // ← 保持引用
-let spotlightWin = null;
-let isQuiting = false;
 // 检查是否已存在实例
 const gotTheLock = app.requestSingleInstanceLock();
-const accelerator = isMac ? 'CommandOrControl+Option+P' : 'CommandOrControl+Alt+P';
 
 const Store = require('electron-store');
 const store = new Store({
@@ -130,7 +130,7 @@ function createUpdateWindow() {
 }
 
 function showUpdateUI(payload) {
-  console.log('showUpdateUI', payload);
+  log.info('showUpdateUI', payload);
   const w = createUpdateWindow();
   if (!w.isVisible()) w.show();
   // 用 postMessage 往页面发数据
@@ -264,11 +264,10 @@ function mockUpdateFlow() {
 /*****************************************************************************/
 
 // 打开日志目录
-/*****************************************************************************/
-
 function openLogDir() {
   shell.openPath(log.transports.file.getFile().path.replace(/main\.log$/, ''));
 }
+/*****************************************************************************/
 
 const UPDATE_SERVER_BASE = 'http://127.0.0.1:3000'; // 改成你的 Express 服务器 IP
 
@@ -357,6 +356,13 @@ function setProgressUI({ percent, transferred, total, speed, text }) {
     .catch(() => {});
 }
 
+/**
+ * 带进度的文件下载函数
+ * @param {string} url - 下载文件的URL地址
+ * @param {string} outFile - 下载文件的保存路径
+ * @param {Function} onProgress - 进度回调函数，接收 { percent, transferred, total, speed, elapsedSec } 参数
+ * @returns {Promise<string>} - 返回下载完成的文件路径
+ */
 function downloadFileWithProgress(url, outFile, onProgress) {
   log.info('[manual-update] progress', {
     percent: p.percent.toFixed(1),
@@ -442,8 +448,14 @@ function resolveDownloadUrl(updateInfo) {
   return new URL(fileUrl, feed).toString();
 }
 
+/**
+ * 启动手动更新流程
+ * @param {Object} updateInfo - 更新信息对象，包含下载地址等信息
+ * @returns {Promise<void>} - 无返回值
+ */
 async function startManualUpdateFlow(updateInfo) {
   const downloadUrl = resolveDownloadUrl(updateInfo);
+  log.info('[updater] manual update flow start', { downloadUrl });
   if (!downloadUrl) {
     await dialog.showMessageBox({
       type: 'error',
@@ -458,8 +470,8 @@ async function startManualUpdateFlow(updateInfo) {
   const fileName = decodeURIComponent(new URL(downloadUrl).pathname.split('/').pop() || 'update.exe');
   const outFile = path.join(saveDir, fileName);
 
-  const win = createProgressWindow();
-  win.show();
+  const win2 = createProgressWindow();
+  win2.show();
 
   try {
     let lastText = `来源：${downloadUrl}`;
@@ -495,7 +507,7 @@ async function startManualUpdateFlow(updateInfo) {
       shell.openPath(outFile); // 直接运行安装包
     }
   } catch (e) {
-    console.error('[manual-update] download error:', e);
+    log.error('[manual-update] download error:', e);
     if (progressWin && !progressWin.isDestroyed()) {
       progressWin.setProgressBar(-1);
       progressWin.close();
@@ -509,45 +521,29 @@ async function startManualUpdateFlow(updateInfo) {
   }
 }
 
+/**
+ * 设置自动更新配置
+ * 配置 electron-updater 以检查更新，但不自动下载和安装
+ */
 function setupAutoUpdate() {
   log.info('[updater] setup start');
   // 只用来“检查更新拿信息”，不走下载/安装（避免签名校验卡住）
   autoUpdater.autoDownload = false;
 
-  if (!app.isPackaged) {
+  if (isDev) {
     autoUpdater.forceDevUpdateConfig = true;
-    console.log('xxxx');
+    // log.debug('dev mode enabled for auto updater');
   }
 
   autoUpdater.setFeedURL({
     provider: 'generic',
     url: getFeedURL(),
   });
-
   log.info('[updater] feed url:', getFeedURL());
 
   autoUpdater.on('checking-for-update', () => {
-    console.log('[updater] checking for update');
     log.info('[updater] checking for update');
   });
-
-  // autoUpdater.on('update-available', async (info) => {
-  //   console.log('[updater] update available:', info.version);
-
-  //   const r = await dialog.showMessageBox({
-  //     type: 'info',
-  //     title: '发现新版本',
-  //     message: `发现新版本 ${info.version}，是否下载？`,
-  //     buttons: ['下载', '稍后'],
-  //     defaultId: 0,
-  //     cancelId: 1,
-  //     noLink: true,
-  //   });
-
-  //   if (r.response === 0) {
-  //     autoUpdater.downloadUpdate();
-  //   }
-  // });
 
   autoUpdater.on('update-available', async (info) => {
     log.info('[updater] update available', {
@@ -565,25 +561,23 @@ function setupAutoUpdate() {
     });
 
     if (r.response === 0) {
+      // autoUpdater.downloadUpdate();
       await startManualUpdateFlow(info);
     }
   });
 
   autoUpdater.on('update-not-available', () => {
-    console.log('[updater] no update available');
+    log.info('[updater] no update available');
   });
 
   autoUpdater.on('download-progress', (p) => {
-    console.log(`[updater] download ${Math.round(p.percent)}% (${p.transferred}/${p.total})`);
+    log.info(`[updater] download ${Math.round(p.percent)}% (${p.transferred}/${p.total})`);
   });
 
   autoUpdater.on('update-downloaded', async () => {
-    console.log('[updater] update downloaded');
-    log.info('[updater] update not available');
+    log.info('[updater] update downloaded');
 
     // mac 无签名：不保证一定成功，但允许尝试
-    const isMac = process.platform === 'darwin';
-
     const r = await dialog.showMessageBox({
       type: 'info',
       title: '更新已下载',
@@ -602,7 +596,7 @@ function setupAutoUpdate() {
   });
 
   autoUpdater.on('error', (err) => {
-    console.error('[updater] error:', err);
+    log.error('[updater] error:', err);
     // mac 无签名时这里偶尔会报错，建议只打日志
   });
 }
@@ -611,56 +605,9 @@ function checkForUpdates() {
   try {
     autoUpdater.checkForUpdates();
   } catch (e) {
-    console.error('[updater] check failed:', e);
+    log.error('[updater] check failed:', e);
   }
 }
-
-/**
-
-
-const UPDATE_SERVER_BASE = "http://192.168.1.10:3000";
-
-function getFeedURL() {
-  if (process.platform === "win32") return `${UPDATE_SERVER_BASE}/win/`;
-  if (process.platform === "darwin") return `${UPDATE_SERVER_BASE}/mac/`;
-  return UPDATE_SERVER_BASE;
-}
-
-function setupUpdater() {
-  autoUpdater.autoDownload = false;
-
-  autoUpdater.setFeedURL({ provider: "generic", url: getFeedURL() });
-
-  autoUpdater.on("update-available", async (info) => {
-    const r = await dialog.showMessageBox({
-      type: "info",
-      title: "发现新版本",
-      message: `发现新版本 ${info.version}，是否下载？`,
-      buttons: ["下载", "稍后"],
-      defaultId: 0,
-      cancelId: 1,
-      noLink: true,
-    });
-    if (r.response === 0) autoUpdater.downloadUpdate();
-  });
-
-  autoUpdater.on("update-downloaded", async () => {
-    const r = await dialog.showMessageBox({
-      type: "info",
-      title: "更新已就绪",
-      message: "更新已下载完成，是否立即安装并重启？",
-      buttons: ["安装并重启", "稍后"],
-      defaultId: 0,
-      cancelId: 1,
-      noLink: true,
-    });
-    if (r.response === 0) autoUpdater.quitAndInstall(true, true);
-  });
-
-  autoUpdater.on("error", (e) => console.error("[updater] error:", e));
-}
-
- */
 /*****************************************************************************/
 
 /*****************************************************************************/
@@ -699,7 +646,7 @@ function createTray() {
       },
     },
     { type: 'separator' },
-    { label: '关于', click: () => console.log('关于被点击') },
+    { label: '关于', click: () => log.info('关于被点击') },
     {
       label: '检查更新',
       click: () => checkForUpdates(),
@@ -724,6 +671,7 @@ function createTray() {
     }
   });
 }
+
 function createSpotlight() {
   spotlightWin = new BrowserWindow({
     width: 624,
@@ -761,9 +709,7 @@ function createMenu() {
     {
       label: '菜单一',
       submenu: [
-        { label: '功能一', click: () => console.log('功能一') },
-        { label: '功能二', click: () => console.log('功能二') },
-        { label: '功能三', click: () => checkForUpdates() },
+        { label: '检查更新', click: () => checkForUpdates() },
 
         { type: 'separator' },
         { role: 'quit', label: '退出' },
@@ -823,7 +769,7 @@ function createWindow() {
   win.webContents.openDevTools();
 
   win.on('close', (e) => {
-    if (!isQuiting) {
+    if (!isQuitting) {
       e.preventDefault();
       if (win.isMinimized()) {
         win.restore();
@@ -835,9 +781,9 @@ function createWindow() {
 }
 
 function initUpdater() {
-  if (!app.isPackaged) {
-    console.log('[updater] skip in dev mode');
-    // return;
+  if (isDev) {
+    log.info('[updater] skip in dev mode');
+    return;
   }
   setupAutoUpdate();
   autoUpdater.checkForUpdates();
@@ -859,8 +805,6 @@ if (!gotTheLock) {
   // 创建窗口
   app.whenReady().then(async () => {
     initUpdater();
-    // setupAutoUpdate();
-    // setTimeout(checkForUpdates, 3000);
     registerAllIpc(ipcMain);
     createWindow();
     if (process.platform === 'win32') {
@@ -905,20 +849,18 @@ app.on('will-quit', function () {
 });
 
 app.on('before-quit', () => {
-  isQuiting = true;
+  isQuitting = true;
 });
 
+// 在 macOS 上，除非用户用 Cmd + Q 确定地退出，否则绝大部分应用及其菜单栏会保持激活
 app.on('window-all-closed', () => {
-  // 在 macOS 上，除非用户用 Cmd + Q 确定地退出，
-  // 否则绝大部分应用及其菜单栏会保持激活。
   if (process.platform !== 'darwin') {
     app.quit();
   }
 });
 
+// 在macOS上，当单击dock图标并且没有其他窗口打开时，通常在应用程序中重新创建一个窗口
 app.on('activate', () => {
-  // 在macOS上，当单击dock图标并且没有其他窗口打开时，
-  // 通常在应用程序中重新创建一个窗口。
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }

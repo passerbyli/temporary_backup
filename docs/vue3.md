@@ -108,6 +108,9 @@ export default {
 
   // 只新增这一段：注册局部语言包 + 提供 $t
   setup() {
+    this.$i18n.mergeLocaleMessage('zh-CN', {
+      title: '标题'
+    })
     const { t } = useI18n({
       useScope: 'local',
       inheritLocale: true,

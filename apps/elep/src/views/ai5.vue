@@ -51,7 +51,6 @@
                         复制
                     </el-button>
 
-                    <!-- 中断回答 -->
                     <el-button v-if="isStreaming" size="mini" type="text" icon="el-icon-close" @click="stopStream">
                         中断回答
                     </el-button>
@@ -109,9 +108,8 @@
 <script>
 import { marked } from 'marked'
 
-const LLM_STREAM_URL = 'http://localhost:3000/llm/stream?mode=normal'
+const LLM_STREAM_URL = '/llm/stream?mode=normal'
 const COMPLIANCE_URL = '/compliance/risk'
-// =================================
 
 export default {
     name: 'LLMStreamDemo',
@@ -137,17 +135,25 @@ export default {
             tEnd: null,
 
             // 请求控制
-            abortController: null,       // 主流式接口
-            complianceAbort: null,       // 合规风险接口
+            abortController: null, // 主流式接口
+            complianceAbort: null, // 合规风险接口
 
-            // 流解析缓冲（兼容 data 堆积/拆分/一次性）
+            // 流解析缓冲
             streamBuffer: '',
 
-            // 用于“合规风险替换”的缓冲与状态
+            // 用于“合规标记位置消费”的缓冲
             sectionBuffer: '',
-            isSkippingCompliance: false,
-            complianceRequested: false,
-            complianceMarker: '<!--COMPLIANCE-->'
+
+            // 合规插入标记（来自流）
+            complianceInsertToken: '【合规风险】',
+
+            // 内部占位符（用于合规先后顺序不确定）
+            complianceMarker: '<!--COMPLIANCE_SECTION-->',
+            complianceSectionInserted: false,
+
+            // 合规接口结果
+            complianceDone: false,
+            complianceMd: '' // 合规最终 markdown；空字符串表示“不插入”
         }
     },
     computed: {
@@ -197,7 +203,6 @@ export default {
         },
 
         resetState() {
-            // 中断旧请求
             if (this.abortController) {
                 this.abortController.abort()
                 this.abortController = null
@@ -222,18 +227,21 @@ export default {
 
             this.streamBuffer = ''
             this.sectionBuffer = ''
-            this.isSkippingCompliance = false
-            this.complianceRequested = false
+
+            this.complianceSectionInserted = false
+            this.complianceDone = false
+            this.complianceMd = ''
         },
 
-        // ========= 主流式调用（兼容三种返回） =========
+        // ====== 主入口：并行请求 compliance + 开始读流 ======
         async startStreamFromApi() {
             this.isStreaming = true
             this.abortController = new AbortController()
             this.streamBuffer = ''
             this.sectionBuffer = ''
-            this.isSkippingCompliance = false
-            this.complianceRequested = false
+
+            // ✅ 并行请求合规风险（不 await）
+            this.fetchComplianceSection()
 
             const body = {
                 partnerCode: this.form.partnerCode,
@@ -265,7 +273,7 @@ export default {
 
             const reader = res.body && res.body.getReader ? res.body.getReader() : null
 
-            // 情况3：一次性返回
+            // 兜底：一次性返回
             if (!reader) {
                 const text = await res.text()
                 this.handleFullText(text)
@@ -276,180 +284,159 @@ export default {
 
             const decoder = new TextDecoder()
 
-            while (true) {
-                const { value, done } = await reader.read()
-                if (done) break
-                if (!value) continue
+            try {
+                while (true) {
+                    const { value, done } = await reader.read()
+                    if (done) break
+                    if (!value) continue
 
-                const chunkText = decoder.decode(value, { stream: true })
-                console.log('Received chunk:', chunkText)
-                this.streamBuffer += chunkText
-                this.processStreamBufferToContent()
+                    const chunkText = decoder.decode(value, { stream: true })
+                    this.streamBuffer += chunkText
+                    this.processStreamBufferToContent(false)
+                }
+            } finally {
+                // ✅ 流结束：强制解析尾巴（修复最后一条解析不到）
+                this.processStreamBufferToContent(true)
+
+                // ✅ 把 sectionBuffer 剩余吐出，同时尝试处理“合规标记”
+                this.flushSectionBufferTail()
+
+                this.isStreaming = false
+                this.tEnd = Date.now()
             }
-
-            // 流结束，再处理一次残留
-            this.processStreamBufferToContent()
-            this.flushSectionBufferTail()
-
-            this.isStreaming = false
-            this.tEnd = Date.now()
         },
 
-        // 将 streamBuffer 里尽可能多的 data:JSON 解析出来，提取 content
-        processStreamBufferToContent() {
+        // ====== 将 streamBuffer 中尽可能多的 data:JSON 解析出 content ======
+        processStreamBufferToContent(isFinal = false) {
             let buf = this.streamBuffer
 
             while (true) {
                 const start = buf.indexOf('data:')
                 if (start === -1) {
-                    // 没有 data:，清空垃圾
                     buf = ''
                     break
                 }
 
                 const next = buf.indexOf('data:', start + 5)
+
+                // ✅ 没有 next：如果不是 final，保留尾巴等待；如果是 final，尝试解析尾巴
                 if (next === -1) {
-                    // 可能是尾巴不完整，保留从 data: 开始
-                    buf = buf.slice(start)
+                    if (!isFinal) {
+                        buf = buf.slice(start)
+                        break
+                    }
+                    const jsonStr = buf.slice(start + 5).trim()
+                    buf = ''
+                    if (jsonStr) this.tryConsumeDataJson(jsonStr)
                     break
                 }
 
                 const jsonStr = buf.slice(start + 5, next).trim()
-                buf = buf.slice(next) // 先推进，避免死循环
+                buf = buf.slice(next)
 
                 if (!jsonStr) continue
-
-                try {
-                    const json = JSON.parse(jsonStr)
-                    if (json.errorCode === 0 && json.result && json.result.content) {
-                        const content = json.result.content
-
-                        // 首个有效内容到达
-                        if (!this.tFirstAt && this.tStart) {
-                            this.tFirstAt = Date.now()
-                        }
-
-                        // ✅ 不直接 outputMarkdown += content
-                        //    走“合规风险替换”逻辑
-                        this.appendStreamText(content)
-                    } else if (json.errorCode !== 0) {
-                        console.warn('LLM errorCode != 0', json)
-                    }
-                } catch (e) {
-                    // JSON 可能被拆分：回退，把这段从 data: 开始保留，等下一块补齐
-                    // 注意：我们此时已经推进了 buf，所以要把“未完成片段”拼回去
-                    buf = 'data:' + jsonStr + buf
-                    break
-                }
+                this.tryConsumeDataJson(jsonStr)
             }
 
             this.streamBuffer = buf
         },
 
-        // 一次性文本处理（复用同逻辑）
+        tryConsumeDataJson(jsonStr) {
+            try {
+                const json = JSON.parse(jsonStr)
+                if (json.errorCode === 0 && json.result && typeof json.result.content === 'string') {
+                    if (!this.tFirstAt && this.tStart) this.tFirstAt = Date.now()
+                    this.appendStreamText(json.result.content)
+                } else if (json.errorCode !== 0) {
+                    console.warn('LLM errorCode != 0', json)
+                }
+            } catch (e) {
+                // JSON 被拆开：把它放回头部，等待下一次补齐
+                this.streamBuffer = 'data:' + jsonStr + this.streamBuffer
+            }
+        },
+
+        // 兜底：一次性文本模式
         handleFullText(text) {
             this.streamBuffer = text || ''
-            this.processStreamBufferToContent()
+            this.processStreamBufferToContent(true)
             this.flushSectionBufferTail()
-
-            if (!this.tFirstAt && this.tStart && this.outputMarkdown) {
-                this.tFirstAt = this.tStart
-            }
+            if (!this.tFirstAt && this.tStart && this.outputMarkdown) this.tFirstAt = this.tStart
             this.tEnd = Date.now()
         },
 
-        // ========= 合规风险替换逻辑 =========
+        // ====== “合规标记位置”消费逻辑 ======
         appendStreamText(text) {
             this.sectionBuffer += text
-            this.consumeSections()
+            this.consumeComplianceInsertToken()
         },
 
-        // 从 sectionBuffer 里“消费”内容：遇到“合规风险”就丢弃其正文，用外部 API 替换
-        consumeSections() {
-            const complianceTitle = '**合规风险**'
-
-            // 找下一节标题：**xxx风险**
-            const findNextRiskTitle = (s, fromIdx) => {
-                let i = s.indexOf('**', fromIdx)
-                while (i !== -1) {
-                    const j = s.indexOf('**', i + 2)
-                    if (j !== -1) {
-                        const title = s.slice(i, j + 2)
-                        if (title.endsWith('风险**')) return { idx: i, title }
-                    }
-                    i = s.indexOf('**', i + 2)
-                }
-                return null
-            }
+        consumeComplianceInsertToken() {
+            const token = this.complianceInsertToken
 
             while (true) {
-                if (!this.isSkippingCompliance) {
-                    const idx = this.sectionBuffer.indexOf(complianceTitle)
-                    if (idx === -1) {
-                        // 没有合规风险标题：安全吐出一部分，保留尾巴避免标题被截断
-                        const safeKeep = 200
-                        if (this.sectionBuffer.length > safeKeep) {
-                            const out = this.sectionBuffer.slice(0, this.sectionBuffer.length - safeKeep)
-                            this.outputMarkdown += out
-                            this.sectionBuffer = this.sectionBuffer.slice(this.sectionBuffer.length - safeKeep)
-                            this.scrollToBottom()
-                        }
-                        break
-                    }
-
-                    // 输出合规风险标题前内容
-                    const before = this.sectionBuffer.slice(0, idx)
-                    this.outputMarkdown += before
-
-                    // 输出合规标题 + 占位符
-                    this.outputMarkdown += complianceTitle + '\n\n' + this.complianceMarker + '\n\n'
-
-                    // 进入跳过模式：把合规标题从 buffer 删除，后面正文将被丢弃直到下一节
-                    this.sectionBuffer = this.sectionBuffer.slice(idx + complianceTitle.length)
-                    this.isSkippingCompliance = true
-                    this.scrollToBottom()
-
-                    // 触发合规 API（只触发一次）
-                    if (!this.complianceRequested) {
-                        this.complianceRequested = true
-                        this.fetchComplianceSection()
-                    }
-
-                    continue
-                }
-
-                // 跳过合规正文，直到下一节标题出现
-                const next = findNextRiskTitle(this.sectionBuffer, 0)
-                if (!next) {
-                    // 下一节还没到，buffer 过大就裁掉（反正都丢弃）
-                    if (this.sectionBuffer.length > 4000) {
-                        this.sectionBuffer = this.sectionBuffer.slice(this.sectionBuffer.length - 200)
+                const idx = this.sectionBuffer.indexOf(token)
+                if (idx === -1) {
+                    // 安全吐出一部分，避免 buffer 无限增长；保留尾巴防止 token 被截断
+                    const safeKeep = Math.max(64, token.length + 16)
+                    if (this.sectionBuffer.length > safeKeep) {
+                        const out = this.sectionBuffer.slice(0, this.sectionBuffer.length - safeKeep)
+                        this.outputMarkdown += out
+                        this.sectionBuffer = this.sectionBuffer.slice(this.sectionBuffer.length - safeKeep)
+                        this.scrollToBottom()
                     }
                     break
                 }
 
-                // 退出跳过模式，保留从下一节开始内容
-                this.sectionBuffer = this.sectionBuffer.slice(next.idx)
-                this.isSkippingCompliance = false
-                // 继续 while，可能后面还有合规标题（理论上不会，但安全）
-            }
-        },
+                // 1) 先输出标记前内容
+                const before = this.sectionBuffer.slice(0, idx)
+                this.outputMarkdown += before
 
-        // 流结束时，把 sectionBuffer 剩余内容全部输出（若正处于跳过模式，则只输出下一节之后的部分已在 consume 中处理）
-        flushSectionBufferTail() {
-            if (!this.isSkippingCompliance && this.sectionBuffer) {
-                this.outputMarkdown += this.sectionBuffer
-                this.sectionBuffer = ''
+                // 2) 消费掉 token 本身
+                this.sectionBuffer = this.sectionBuffer.slice(idx + token.length)
+
+                // 3) 在此位置插入合规段：如果合规已返回且非空 -> 直接插入；否则放占位符（或空）
+                if (this.complianceDone) {
+                    // 合规接口已完成：有内容则插入，无内容则不插入（即什么都不写）
+                    if (this.complianceMd) this.outputMarkdown += this.complianceMd
+                } else {
+                    // 合规未完成：先占位，后续替换（如果最终为空会替换成空）
+                    this.outputMarkdown += this.complianceMarker + '\n\n'
+                    this.complianceSectionInserted = true
+                }
+
                 this.scrollToBottom()
+
+                // 4) 如果此时合规已经返回（极端竞态），立即尝试替换 marker
+                this.tryRenderComplianceIntoDoc()
             }
         },
 
-        async fetchComplianceSection() {
-            // 合规 API 可中断
-            this.complianceAbort = new AbortController()
+        flushSectionBufferTail() {
+            if (this.sectionBuffer) {
+                // 流结束：把剩余全部吐出，同时最后再消费一次 token
+                const tail = this.sectionBuffer
+                this.sectionBuffer = ''
+                this.sectionBuffer = tail
+                this.consumeComplianceInsertToken()
 
-            // 先替换为加载提示
-            this.replaceComplianceMarker('> 合规风险加载中…\n')
+                // token 若不在尾巴里，就直接吐出所有
+                if (this.sectionBuffer) {
+                    this.outputMarkdown += this.sectionBuffer
+                    this.sectionBuffer = ''
+                    this.scrollToBottom()
+                }
+
+                // 流结束后，如果插入过 marker，合规已返回的话做最终替换
+                this.tryRenderComplianceIntoDoc()
+            } else {
+                this.tryRenderComplianceIntoDoc()
+            }
+        },
+
+        // ====== 合规接口：并行请求，返回数据集 -> Markdown ======
+        async fetchComplianceSection() {
+            this.complianceAbort = new AbortController()
 
             const body = {
                 partnerCode: this.form.partnerCode,
@@ -466,114 +453,59 @@ export default {
 
                 if (!res.ok) throw new Error('compliance api status ' + res.status)
 
-                // ⚠️ 这里按你的真实返回格式改：
-                // 假设返回 { content: "markdown..." } 或 { markdown: "..." }
                 const data = await res.json()
 
-                // 兼容：content 是数组 / 对象 / 字符串
-                const md = this.complianceDatasetToMarkdown(data)
-                this.replaceComplianceMarker(md)
+                // ✅ 数据集转 markdown；空则返回 ''
+                this.complianceMd = this.complianceDatasetToMarkdown(data)
+                this.complianceDone = true
 
+                // 合规可能先于/晚于 token 出现，这里都尝试处理
+                this.tryRenderComplianceIntoDoc()
             } catch (e) {
                 if (e.name === 'AbortError') return
-                this.replaceComplianceMarker('> 合规风险获取失败，请稍后重试。\n')
+                // 失败按“空不插入”处理
+                this.complianceMd = ''
+                this.complianceDone = true
+                this.tryRenderComplianceIntoDoc()
             }
         },
+
+        // 你的 /compliance/risk 返回：
+        // { errorCode:0, content:[ {item:"风险点:..."}, ... ] }
+        // 空 => 返回 ''（不插入）
         complianceDatasetToMarkdown(apiData) {
-            // apiData: { errorCode, content, ... }
-            const content = apiData && apiData.content
+            const list = apiData && apiData.content
+            if (!Array.isArray(list) || list.length === 0) return ''
 
-            if (!content) return '> 合规风险暂无数据。\n'
+            const items = list
+                .map(x => (x && typeof x.item === 'string' ? x.item.trim() : ''))
+                .filter(Boolean)
 
-            // 若后端直接给字符串，也支持
-            if (typeof content === 'string') {
-                const t = content.trim()
-                return t ? (t + '\n') : '> 合规风险暂无数据。\n'
-            }
+            if (items.length === 0) return ''
 
-            // 如果是 { items: [...] } 这种
-            const items = Array.isArray(content)
-                ? content
-                : (Array.isArray(content.items) ? content.items : null)
-
-            // summary（可选）
-            const summary = (!Array.isArray(content) && content && typeof content.summary === 'string')
-                ? content.summary.trim()
-                : ''
-
-            let md = ''
-            if (summary) {
-                md += `> ${summary}\n\n`
-            }
-
-            if (items && items.length) {
-                md += this.toTableMarkdown(items) + '\n'
-                return md
-            }
-
-            // content 是对象但不是 items 结构：以稳定 JSON 形式输出（便于对比）
-            md += '```json\n' + this.stableStringify(content) + '\n```\n'
-            return md
-        },
-        toTableMarkdown(rows) {
-            // rows: array<object>
-            // 1) 收集所有 key（稳定排序）
-            const keySet = new Set()
-            rows.forEach(r => {
-                if (r && typeof r === 'object' && !Array.isArray(r)) {
-                    Object.keys(r).forEach(k => keySet.add(k))
+            const title = '**合规风险**\n'
+            const lines = items.map(s => {
+                const idx = s.indexOf(':') >= 0 ? s.indexOf(':') : s.indexOf('：')
+                if (idx > 0) {
+                    const k = s.slice(0, idx).trim()
+                    const v = s.slice(idx + 1).trim()
+                    return `- **${k}**：${v}`
                 }
-            })
-            const keys = Array.from(keySet).sort()
-
-            // 2) 表头
-            const header = `| ${keys.join(' | ')} |`
-            const sep = `| ${keys.map(() => '---').join(' | ')} |`
-
-            // 3) 行内容（数组/对象字段做简洁化）
-            const lines = rows.map(r => {
-                const vals = keys.map(k => {
-                    const v = r ? r[k] : ''
-                    if (v == null) return ''
-                    if (typeof v === 'string') return this.escapeMdCell(v)
-                    if (typeof v === 'number' || typeof v === 'boolean') return String(v)
-                    if (Array.isArray(v)) return this.escapeMdCell(v.join('、'))
-                    if (typeof v === 'object') return this.escapeMdCell(JSON.stringify(v))
-                    return this.escapeMdCell(String(v))
-                })
-                return `| ${vals.join(' | ')} |`
+                return `- ${s}`
             })
 
-            // 4) 如果表太宽（字段太多），补一个“精简要点”，更像报告
-            let extra = ''
-            if (keys.length > 8) {
-                extra += '\n> 字段较多，建议关注关键列（如风险点/等级/建议）。\n'
-            }
-
-            return [header, sep, ...lines].join('\n') + extra
+            return title + lines.join('\n') + '\n\n'
         },
 
-        escapeMdCell(text) {
-            // 避免表格被 | 捣乱、换行破坏布局
-            return String(text)
-                .replace(/\|/g, '\\|')
-                .replace(/\r?\n/g, ' ')
-                .trim()
+        tryRenderComplianceIntoDoc() {
+            if (!this.complianceDone) return
+            if (!this.complianceSectionInserted) return
+
+            // complianceMd 为空 => 不插入，直接删除 marker
+            this.replaceComplianceMarker(this.complianceMd || '')
+            this.complianceSectionInserted = false
         },
 
-        stableStringify(obj) {
-            // 稳定排序 JSON（对象 key 排序、数组保持顺序）
-            const recur = (v) => {
-                if (Array.isArray(v)) return v.map(recur)
-                if (v && typeof v === 'object') {
-                    const out = {}
-                    Object.keys(v).sort().forEach(k => { out[k] = recur(v[k]) })
-                    return out
-                }
-                return v
-            }
-            return JSON.stringify(recur(obj), null, 2)
-        },
         replaceComplianceMarker(mdText) {
             const marker = this.complianceMarker
             const i = this.outputMarkdown.indexOf(marker)
@@ -581,7 +513,7 @@ export default {
 
             this.outputMarkdown =
                 this.outputMarkdown.slice(0, i) +
-                mdText +
+                (mdText || '') +
                 this.outputMarkdown.slice(i + marker.length)
 
             this.$nextTick(this.scrollToBottom)
@@ -594,7 +526,7 @@ export default {
             })
         },
 
-        // ========= 中断 =========
+        // ====== 中断 ======
         stopStream() {
             if (this.abortController) {
                 this.abortController.abort()
@@ -610,7 +542,7 @@ export default {
             }
         },
 
-        // ========= 反馈 =========
+        // ====== 反馈 ======
         handleLike() {
             if (this.feedbackSubmitted) return
             this.liked = true
@@ -625,7 +557,6 @@ export default {
             if (!this.feedbackTextTrim) return
             this.isSubmittingFeedback = true
 
-            // TODO: 换成你的反馈接口
             setTimeout(() => {
                 this.isSubmittingFeedback = false
                 this.showFeedbackBox = false
@@ -638,7 +569,7 @@ export default {
             this.feedbackText = ''
         },
 
-        // ========= 复制 =========
+        // ====== 复制 ======
         copyResult() {
             if (!this.outputMarkdown) return
             const text = this.outputMarkdown
@@ -667,7 +598,7 @@ export default {
             document.body.removeChild(ta)
         }
     },
-    beforeDestroy() {
+    beforeUnmount() {
         if (this.abortController) {
             this.abortController.abort()
             this.abortController = null

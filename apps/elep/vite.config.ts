@@ -14,6 +14,28 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      '/llm': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        ws: true,
+        secure: false,
+        timeout: 0,
+        proxyTimeout: 0,
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            // ✅ 关键：不要压缩，否则容易被缓冲成“只来第一段”
+            proxyReq.removeHeader('accept-encoding');
+            proxyReq.setHeader('connection', 'keep-alive');
+          });
+        },
+      },
+      '/compliance': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+        timeout: 0,
+        proxyTimeout: 0,
+      },
       '/api': {
         target: 'http://localhost:3000', // 后端服务器地址
         changeOrigin: true,

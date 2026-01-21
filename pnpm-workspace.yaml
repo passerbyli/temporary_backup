@@ -1,0 +1,12 @@
+packages:
+  - packages/*
+  - apps/my_ds_app/*
+  - apps/*
+
+ignoredBuiltDependencies:
+  - esbuild
+  - phantomjs-prebuilt
+  - vue-demi
+
+onlyBuiltDependencies:
+  - electron

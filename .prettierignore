@@ -1,0 +1,11 @@
+# 排除不需要检查的文件
+
+# !.prettierignore
+# !.prettierrc.js
+dist
+node_modules
+public
+.local
+pnpm-lock.yaml
+.DS_Store
+apps/my_ds_app/pages

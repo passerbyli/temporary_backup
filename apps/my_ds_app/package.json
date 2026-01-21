@@ -1,0 +1,52 @@
+{
+  "name": "my_ds_app-desktop",
+  "description": "electron 项目",
+  "author": {
+    "name": "你的名字",
+    "email": "you@example.com"
+  },
+  "private": true,
+  "version": "0.0.1",
+  "main": "main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview",
+    "start:mac": "nodemon --exec NODE_ENV=development electron .  --watch ./ --ext .js",
+    "startAll": "concurrently \"pnpm run dev\" \"pnpm run start:mac\"",
+    "release:mac": "electron-builder --mac --arm64 --publish always",
+    "releaseAll": "pnpm run build && pnpm run release:mac"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "cron": "^4.4.0",
+    "dayjs": "^1.11.19",
+    "electron-log": "^5.4.3",
+    "electron-reload": "2.0.0-alpha.1",
+    "electron-store": "6.0.1",
+    "electron-updater": "^6.6.2",
+    "element-plus": "^2.13.0",
+    "https": "^1.0.0",
+    "marked": "^17.0.1",
+    "mysql2": "^3.16.0",
+    "pg": "^8.16.3",
+    "validator": "^13.15.26",
+    "vue": "^3.5.24",
+    "vue-router": "^4.6.4",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vue/tsconfig": "^0.8.1",
+    "concurrently": "^9.2.1",
+    "electron": "29.4.5",
+    "electron-builder": "24",
+    "electron-icon-builder": "^2.0.1",
+    "nodemon": "^3.1.11",
+    "typescript": "~5.9.3",
+    "vite": "^7.2.4",
+    "vite-plugin-vue-devtools": "^7.7.2",
+    "vue-tsc": "^3.1.4"
+  }
+}

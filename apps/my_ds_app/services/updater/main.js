@@ -15,6 +15,8 @@ class UpdateManager {
     this.progressWin = null;
     this.isDev = process.env.NODE_ENV === 'development' || !this.app.isPackaged;
 
+    this.globalSettings = false;
+
     // 让 electron-updater 也写进同一份日志
     autoUpdater.logger = this.log;
     autoUpdater.autoDownload = false;
@@ -24,204 +26,9 @@ class UpdateManager {
     this.mainWindow = mainWindow;
   }
 
-  // ====== 更新UI窗口 ======
-  createUpdateWindow() {
-    if (this.updateWindow && !this.updateWindow.isDestroyed()) return this.updateWindow;
-
-    this.updateWindow = new BrowserWindow({
-      width: this.config.UPDATE_WINDOW_WIDTH,
-      height: this.config.UPDATE_WINDOW_HEIGHT,
-      resizable: false,
-      minimizable: true,
-      maximizable: false,
-      show: false,
-      alwaysOnTop: true,
-      title: '正在更新',
-      webPreferences: {
-        nodeIntegration: false,
-        contextIsolation: true,
-      },
-    });
-
-    // 简单内嵌页面（无需额外文件）
-    const html = `
-<!doctype html>
-<html>
-<head>
-<meta charset="utf-8"/>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data:;">
-<style>
-  body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial;
-       margin:16px;background:#fff;color:#111}
-  .title{font-size:16px;font-weight:600;margin-bottom:10px}
-  .desc{font-size:12px;color:#555;margin-bottom:12px;white-space:pre-line}
-  .bar{height:10px;background:#eee;border-radius:999px;overflow:hidden}
-  .fill{height:10px;width:0%;background:#2f7cf6}
-  .row{display:flex;justify-content:space-between;margin-top:10px;font-size:12px;color:#333}
-  .muted{color:#666}
-</style>
-</head>
-<body>
-  <div class="title" id="title">准备更新…</div>
-  <div class="desc" id="desc">正在初始化</div>
-  <div class="bar"><div class="fill" id="fill"></div></div>
-  <div class="row">
-    <div id="percent">0%</div>
-    <div class="muted" id="detail">0 MB / 0 MB</div>
-  </div>
-
-<script>
-  // 通过 window.postMessage 接收主进程发来的状态（无需ipc）
-  window.addEventListener('message', (e) => {
-    const s = e.data || {};
-    if (s.title) document.getElementById('title').textContent = s.title;
-    if (s.desc) document.getElementById('desc').textContent = s.desc;
-    if (typeof s.percent === 'number') {
-      document.getElementById('percent').textContent = Math.floor(s.percent) + '%';
-      document.getElementById('fill').style.width = Math.max(0, Math.min(100, s.percent)) + '%';
-    }
-    if (s.detail) document.getElementById('detail').textContent = s.detail;
-  });
-</script>
-</body>
-</html>`;
-
-    this.updateWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
-    this.updateWindow.on('closed', () => (this.updateWindow = null));
-    return this.updateWindow;
-  }
-
-  showUpdateUI(payload) {
-    this.log.info('showUpdateUI', payload);
-    const w = this.createUpdateWindow();
-    if (!w.isVisible()) w.show();
-    // 用 postMessage 往页面发数据
-    w.webContents.executeJavaScript(`window.postMessage(${JSON.stringify(payload)}, '*');`, true).catch(() => {});
-  }
-
-  closeUpdateUI() {
-    if (this.updateWindow && !this.updateWindow.isDestroyed()) this.updateWindow.close();
-    this.updateWindow = null;
-  }
-
-  formatMB(bytes) {
-    if (!bytes || bytes <= 0) return '0 MB';
-    return (bytes / 1024 / 1024).toFixed(1) + ' MB';
-  }
-
-  formatSpeed(bps) {
-    if (!bps || bps <= 0) return '';
-    return (bps / 1024 / 1024).toFixed(1) + ' MB/s';
-  }
-
-  // 模拟更新流程（用于开发测试）
-  mockUpdateFlow() {
-    // 1) checking
-    this.showUpdateUI({
-      title: '检查更新…',
-      desc: '（DEV 模拟）正在连接内部更新服务器',
-      percent: 0,
-      detail: '',
-    });
-    if (this.mainWindow && !this.mainWindow.isDestroyed()) this.mainWindow.setProgressBar(2);
-
-    // 2) update available
-    setTimeout(async () => { // 800ms 延迟
-      if (this.mainWindow && !this.mainWindow.isDestroyed()) this.mainWindow.setProgressBar(-1);
-
-      this.showUpdateUI({
-        title: '发现新版本',
-        desc: '（DEV 模拟）新版本：0.0.99\n下载完成后将自动安装并重启',
-        percent: 0,
-        detail: '',
-      });
-
-      const r = await dialog.showMessageBox(this.mainWindow ?? undefined, {
-        type: 'info',
-        title: '发现新版本（DEV 模拟）',
-        message: '发现新版本 0.0.99',
-        detail: '是否现在下载？（模拟下载进度）',
-        buttons: ['立即下载', '稍后'],
-        defaultId: 0,
-        cancelId: 1,
-        noLink: true,
-      });
-
-      if (r.response !== 0) {
-        this.closeUpdateUI();
-        return;
-      }
-
-      // 3) progress
-      let percent = 0;
-      if (this.mainWindow && !this.mainWindow.isDestroyed()) this.mainWindow.setProgressBar(0);
-
-      const timer = setInterval(() => {
-        percent += 2.5; // 每次增加2.5%进度
-        const transferred = (Math.min(100, percent) / 100) * this.config.MOCK_UPDATE_FILE_SIZE_MB * 1024 * 1024;
-        const total = this.config.MOCK_UPDATE_FILE_SIZE_MB * 1024 * 1024;
-
-        this.showUpdateUI({
-          title: '正在下载更新…',
-          desc: '（DEV 模拟）下载完成后将提示安装并重启',
-          percent: Math.min(100, percent),
-          detail: `${this.formatMB(transferred)} / ${this.formatMB(total)}  ·  ${this.config.MOCK_UPDATE_SPEED_MBPS} MB/s`,
-        });
-
-        if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-          this.mainWindow.setProgressBar(Math.max(0, Math.min(1, percent / 100)));
-        }
-
-        if (percent >= 100) {
-          clearInterval(timer);
-          if (this.mainWindow && !this.mainWindow.isDestroyed()) this.mainWindow.setProgressBar(-1);
-
-          // 4) downloaded
-          setTimeout(async () => {
-            this.showUpdateUI({
-              title: '下载完成',
-              desc: '（DEV 模拟）已准备安装。安装过程中应用会退出并自动重启。',
-              percent: 100,
-              detail: '下载完成',
-            });
-
-            const rr = await dialog.showMessageBox(this.mainWindow ?? undefined, {
-              type: 'info',
-              title: '更新已就绪（DEV 模拟）',
-              message: '更新已下载完成',
-              detail: '是否现在安装并重启？（这里只模拟，不会真的安装）',
-              buttons: ['立即安装并重启', '稍后'],
-              defaultId: 0,
-              cancelId: 1,
-              noLink: true,
-            });
-
-            if (rr.response === 0) {
-              this.showUpdateUI({
-                title: '正在安装…',
-                desc: '（DEV 模拟）请稍候，应用即将重启',
-                percent: 100,
-                detail: '安装中',
-              });
-
-              // 模拟“重启”
-              setTimeout(() => { // 800ms 延迟
-                this.closeUpdateUI();
-                dialog.showMessageBox({
-                  type: 'info',
-                  title: '模拟完成',
-                  message: '（DEV 模拟）已完成安装并重启（仅演示 UI）',
-                  buttons: ['知道了'],
-                  noLink: true,
-                });
-              }, 800); // 800ms 延迟
-            } else {
-              this.closeUpdateUI();
-            }
-          }, 300); // 300ms 延迟
-        }
-      }, 120); // 120ms 间隔
-    }, 800);
+  // 给渲染进程发送消息
+  sendUpdateMessage(text) {
+    this.mainWindow.webContents.send('message', text);
   }
 
   getFeedURL() {
@@ -332,7 +139,9 @@ class UpdateManager {
         // 处理 302/301
         if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
           res.resume();
-          return resolve(this.downloadFileWithProgress(new URL(res.headers.location, u).toString(), outFile, onProgress));
+          return resolve(
+            this.downloadFileWithProgress(new URL(res.headers.location, u).toString(), outFile, onProgress),
+          );
         }
 
         if (res.statusCode !== 200) {
@@ -354,7 +163,8 @@ class UpdateManager {
           transferred += chunk.length;
 
           const now = Date.now();
-          if (now - lastTick >= 300) { // 300ms 更新一次进度
+          if (now - lastTick >= 300) {
+            // 300ms 更新一次进度
             const elapsedSec = (now - start) / 1000;
             const deltaBytes = transferred - lastBytes;
             const deltaSec = (now - lastTick) / 1000;
@@ -408,7 +218,7 @@ class UpdateManager {
    */
   async startManualUpdateFlow(updateInfo) {
     const downloadUrl = this.resolveDownloadUrl(updateInfo);
-    this.log.info('[updater] manual update flow start', { downloadUrl });
+    this.log.info('[updater] 启动手动更新流程', { downloadUrl });
     if (!downloadUrl) {
       await dialog.showMessageBox({
         type: 'error',
@@ -486,26 +296,45 @@ class UpdateManager {
     if (this.isDev) {
       autoUpdater.forceDevUpdateConfig = true;
     }
-
+    // 设置更新包的地址
     autoUpdater.setFeedURL({
       provider: 'generic',
       url: this.getFeedURL(),
     });
     this.log.info('[updater] feed url:', this.getFeedURL());
 
-    autoUpdater.on('checking-for-update', () => {
-      this.log.info('[updater] checking for update');
+    // 监听开始检测更新事件
+    autoUpdater.on('checking-for-update', (message) => {
+      this.log.info('[updater] 检测更新', message);
     });
 
+    // 监听发现可用更新事件
     autoUpdater.on('update-available', async (info) => {
-      this.log.info('[updater] update available', {
+      this.log.info('[updater] 发现可用更新', {
         version: info.version,
         files: info.files,
       });
+
+      const releaseNotes = info.releaseNotes;
+      let releaseContent = '';
+      if (releaseNotes) {
+        releaseContent = '本次更新\n';
+        if (typeof releaseNotes === 'string') {
+          releaseContent = releaseNotes;
+        } else if (releaseNotes instanceof Array) {
+          releaseNotes.forEach((releaseNote, index) => {
+            releaseContent += `- ${releaseNote}\n`;
+          });
+        }
+      } else {
+        releaseContent = '暂无更新说明';
+      }
+
       const r = await dialog.showMessageBox(this.mainWindow ?? undefined, {
         type: 'info',
         title: '发现新版本',
         message: `发现新版本 ${info.version}，是否下载？`,
+        detail: releaseContent,
         buttons: ['下载', '稍后'],
         defaultId: 0,
         cancelId: 1,
@@ -513,29 +342,32 @@ class UpdateManager {
       });
 
       if (r.response === 0) {
-        // autoUpdater.downloadUpdate();
         await this.startManualUpdateFlow(info);
       }
     });
-
-    autoUpdater.on('update-not-available', () => {
-      this.log.info('[updater] no update available');
+    // 监听没有可用更新事件
+    autoUpdater.on('update-not-available', (message) => {
+      this.log.info('[updater] 没有可用更新', message);
     });
-
+    // 更新下载进度事件
     autoUpdater.on('download-progress', (p) => {
       this.log.info(`[updater] download ${Math.round(p.percent)}% (${p.transferred}/${p.total})`);
     });
 
-    autoUpdater.on('update-downloaded', async () => {
+    // 监听下载完成事件
+    // autoUpdater.on('update-downloaded', async (event, releaseNotes, releaseName, releaseDate, updateUrl, quitAndUpdate) => {
+    autoUpdater.on('update-downloaded', async (releaseInfo) => {
       this.log.info('[updater] update downloaded');
+      this.log.info(JSON.stringify(releaseInfo));
 
       // mac 无签名：不保证一定成功，但允许尝试
       const r = await dialog.showMessageBox(this.mainWindow ?? undefined, {
         type: 'info',
         title: '更新已下载',
-        message: process.platform === 'darwin'
-          ? '更新已下载完成，重启应用以尝试完成更新。\n\n如果更新失败，请退出应用后重新打开。'
-          : '更新已下载完成，是否立即安装并重启？',
+        message:
+          process.platform === 'darwin'
+            ? '更新已下载完成，重启应用以尝试完成更新。\n\n如果更新失败，请退出应用后重新打开。'
+            : '更新已下载完成，是否立即安装并重启？',
         buttons: process.platform === 'darwin' ? ['立即重启', '稍后'] : ['安装并重启', '稍后'],
         defaultId: 0,
         cancelId: 1,
@@ -549,7 +381,10 @@ class UpdateManager {
 
     autoUpdater.on('error', (err) => {
       this.log.error('[updater] error:', err);
-      // mac 无签名时这里偶尔会报错，建议只打日志
+      sendUpdateMessage({
+        cmd: 'error',
+        message: error,
+      });
     });
   }
 
@@ -564,7 +399,7 @@ class UpdateManager {
   initUpdater() {
     if (this.isDev) {
       this.log.info('[updater] skip in dev mode');
-      return;
+      // return;
     }
     this.setupAutoUpdate();
     // autoUpdater.checkForUpdates();
@@ -573,14 +408,6 @@ class UpdateManager {
   // 初始化更新管理器
   init() {
     this.initUpdater();
-  }
-
-  // 清理资源
-  cleanup() {
-    this.closeUpdateUI();
-    if (this.progressWin && !this.progressWin.isDestroyed()) {
-      this.progressWin.close();
-    }
   }
 }
 

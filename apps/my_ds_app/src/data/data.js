@@ -1,1 +1,1 @@
-export default { tasks:[], taskCycle=[], markLines=[] };
+export default { tasks:[], taskCycle:[], markLines:[] };

@@ -1,45 +1,33 @@
 const Store = require('electron-store');
 const { log } = require('../log/logger');
+const defaults = require('./defaultConfig.json');
+
+// const store = new Store({
+//   name: 'config', // 会保存为 config.json
+//   defaults: defaults,
+// });
 
 const store = new Store({
-  name: 'config', // 会保存为 config.json
-  defaults: {
-    global: {
-      isLogin: false,
-      auth: {
-        role: '',
-        displayName: '',
-        username: '',
-        password: '',
-        errorCount: 0,
-        errorMessage: '',
-        cookies: [],
-      },
-      menuPosition: 'left',
-      theme: 'light',
-      language: 'zh_CN',
-      notify: { disable: false },
-      basePath: '',
-      autoLogin: {
-        disable: true,
-        cron: '* * */30 * * *',
-      },
-    },
-    modules: {
-      module2: {
-        cronJobs: {
-          cronJob1: '',
-          cronJob2: '',
-        },
-        type: 'PI',
-      },
-      module3: {
-        accounts: {
-          beta: { username: '', password: '', cookies: [] },
-          pord: { username: '', password: '', cookies: [] },
-        },
-        currentEnv: 'beta',
-      },
+  name: 'config',
+  defaults: defaults,
+  migrations: {
+    '1.1.0': (store) => {
+      // ===== global.autoLogin =====
+      const autoLogin = store.get('global.autoLogin') || {};
+
+      store.set('global.autoLogin', {
+        loginApi: 'xxxxx',
+        cron: '* * */50 * * *',
+        ...autoLogin, // 旧值优先
+      });
+
+      // ===== 新 module1 =====
+      if (!store.has('modules.module1')) {
+        store.set('modules.module1', {
+          apiUrl: 'xxxx',
+          api2Url: 'xxxx',
+        });
+      }
     },
   },
 });

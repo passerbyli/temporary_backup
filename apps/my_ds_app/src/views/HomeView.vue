@@ -43,6 +43,9 @@
           </div>
         </div>
       </div>
+      <div class="action-card">
+        <SysMonitor></SysMonitor>
+      </div>
       <el-card class="log-card">
         <div class="log-head">
           <div class="log-title">运行日志</div>
@@ -53,6 +56,7 @@
         </el-scrollbar>
       </el-card>
     </section>
+    
   </main>
 </template>
 
@@ -60,10 +64,11 @@
 import { FolderOpened, CloseBold, Minus, Plus } from '@element-plus/icons-vue';
 import { defineComponent, onMounted, toRefs, reactive, ref, watch } from 'vue';
 import { sysOpenchrome, sysOpenDirectory } from '../services/configService';
+import SysMonitor from '../components/SysMonitor.vue';
 export default defineComponent({
   name: 'HomeView',
   components: {
-    FolderOpened, CloseBold, Minus, Plus
+    FolderOpened, CloseBold, Minus, Plus, SysMonitor
   },
   setup(props, context) {
     const logsContent = ref('');

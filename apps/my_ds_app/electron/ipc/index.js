@@ -2,10 +2,12 @@ const { app } = require('electron');
 
 const registerConfigIpc = require('./configIpc');
 const registerSysIpc = require('./sysIpc');
+const registerSysMonitorIpc = require('./sysMonitorIpc');
 
 function registerAllIpc(ipcMain) {
   registerConfigIpc(ipcMain);
   registerSysIpc(ipcMain);
+  registerSysMonitorIpc(ipcMain);
   console.log('[IPC] 所有 IPC handler 已注册完成');
 }
 

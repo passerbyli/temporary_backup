@@ -5,8 +5,8 @@ const router = createRouter({
     {
       path: '/home',
       name: 'home',
-      // component: () => import('../views/HomeView.vue'),
-      component: () => import('../views/TaskBoardView.vue'),
+      component: () => import('../views/HomeView.vue'),
+      // component: () => import('../views/TaskBoardView.vue'),
       meta: {
         display: true,
         title: '首页',

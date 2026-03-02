@@ -40,3 +40,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
   minimize: () => ipcRenderer.send('window-minimize'),
   maximize: () => ipcRenderer.send('window-maximize'),
 });
+
+contextBridge.exposeInMainWorld('sysMonitor', {
+  start: (options) => ipcRenderer.invoke('sys-monitor:start', options),
+  stop: () => ipcRenderer.invoke('sys-monitor:stop'),
+  once: (options) => ipcRenderer.invoke('sys-monitor:once', options),
+
+  onSample: (cb) => {
+    const handler = (_e, payload) => cb(payload);
+    ipcRenderer.on('sys-monitor:sample', handler);
+    return () => ipcRenderer.removeListener('sys-monitor:sample', handler);
+  },
+
+  onError: (cb) => {
+    const handler = (_e, payload) => cb(payload);
+    ipcRenderer.on('sys-monitor:error', handler);
+    return () => ipcRenderer.removeListener('sys-monitor:error', handler);
+  },
+  kill: (pid) => ipcRenderer.invoke('sys-monitor:kill', pid),
+});
